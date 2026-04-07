@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app          # hot reload
+      - vytal_data:/app/data     # SQLite + arquivos locais
+    environment:
+      - CONFIG_PATH=./config.yaml
+      - ENVIRONMENT=local
+    env_file:
+      - ../backend/.env
+    restart: unless-stopped
+
+volumes:
+  vytal_data:

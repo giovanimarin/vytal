@@ -1,0 +1,9 @@
+[
+  {"name": "record_id",       "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "user_id",         "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "date",            "type": "DATE",    "mode": "REQUIRED"},
+  {"name": "total_steps",     "type": "INT64",   "mode": "REQUIRED"},
+  {"name": "hourly_steps",    "type": "JSON",    "mode": "NULLABLE"},
+  {"name": "source_event_id", "type": "STRING",  "mode": "NULLABLE"},
+  {"name": "normalized_at",   "type": "DATE",    "mode": "NULLABLE"}
+]

@@ -1,0 +1,5 @@
+project_id     = "vytal-prod-123456"
+region         = "us-central1"
+env            = "staging"
+backend_image  = "gcr.io/vytal-prod-123456/vytal-backend:latest"
+backend_domain = "api.vytal.app"

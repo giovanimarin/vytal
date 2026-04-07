@@ -1,0 +1,69 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main      # → production
+      - staging   # → staging
+
+env:
+  REGION: us-central1
+  IMAGE: gcr.io/${{ secrets.GCP_PROJECT_ID }}/vytal-backend
+
+jobs:
+  deploy-backend:
+    name: Build & Deploy Backend
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    permissions:
+      contents: read
+      id-token: write   # necessário para Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=${{ env.IMAGE }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag ${{ steps.tag.outputs.tag }} \
+            --tag ${{ env.IMAGE }}:latest \
+            backend/
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.tag.outputs.tag }}
+          docker push ${{ env.IMAGE }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy vytal-backend-${{ github.ref_name == 'main' && 'production' || 'staging' }} \
+            --image ${{ steps.tag.outputs.tag }} \
+            --region ${{ env.REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --quiet
+
+      - name: Show service URL
+        run: |
+          gcloud run services describe \
+            vytal-backend-${{ github.ref_name == 'main' && 'production' || 'staging' }} \
+            --region ${{ env.REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --format="value(status.url)"

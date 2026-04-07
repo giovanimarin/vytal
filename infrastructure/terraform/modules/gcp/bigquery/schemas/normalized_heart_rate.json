@@ -1,0 +1,11 @@
+[
+  {"name": "record_id",       "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "user_id",         "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "date",            "type": "DATE",    "mode": "REQUIRED"},
+  {"name": "resting_bpm",     "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "average_bpm",     "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "max_bpm",         "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "min_bpm",         "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "source_event_id", "type": "STRING",  "mode": "NULLABLE"},
+  {"name": "normalized_at",   "type": "DATE",    "mode": "NULLABLE"}
+]

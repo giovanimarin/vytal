@@ -1,0 +1,17 @@
+# Vytal — configuração de ambiente
+# Troque 'provider' para mudar o ambiente sem alterar código
+
+cloud:
+  provider: local          # local | gcp
+
+local:
+  data_dir: ./data         # onde ficam os arquivos locais
+  db_path: ./data/vytal.db # SQLite (warehouse local)
+
+gcp:
+  project: ""              # seu GCP project ID
+  region: us-central1
+  storage_bucket: ""
+  bigquery_dataset: vytal
+  pubsub_topic: health-events
+  dataflow_temp: ""        # gs://bucket/temp

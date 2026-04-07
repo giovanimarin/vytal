@@ -1,0 +1,477 @@
+openapi: 3.0.0
+info:
+  title: Vytal API
+  version: 0.1.0
+  description: >
+    API Gateway do Vytal — coleta dados de saúde via Google Fit
+    e fornece indicadores como o Daily Readiness Score.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desenvolvimento local
+  - url: https://api.vytal.app/v1
+    description: Produção
+
+tags:
+  - name: connect
+    description: Fluxo OAuth de conexão com health providers
+  - name: health-data
+    description: Ingestão e consulta de dados de saúde
+  - name: readiness
+    description: Daily Readiness Score e insights
+
+# ---------------------------------------------------------------------------
+# PATHS
+# ---------------------------------------------------------------------------
+paths:
+
+  # --------------------------------------------------------------------------
+  # CONNECT — OAuth com Google Fit
+  # --------------------------------------------------------------------------
+  /connect/{provider}/auth-url:
+    get:
+      tags: [connect]
+      summary: Obter URL de autorização OAuth
+      description: >
+        Retorna a URL para redirecionar o usuário ao fluxo de autorização
+        do provider de saúde (ex: Google Fit).
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google_fit]
+          example: google_fit
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "vytal://oauth/callback"
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "user-123"
+      responses:
+        '200':
+          description: URL de autorização gerada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /connect/{provider}/callback:
+    post:
+      tags: [connect]
+      summary: Trocar authorization code por token
+      description: >
+        Recebe o code retornado pelo provider após autorização do usuário
+        e troca pelo access token. Token é persistido internamente.
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google_fit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthCallbackRequest'
+      responses:
+        '200':
+          description: Conexão estabelecida com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # --------------------------------------------------------------------------
+  # HEALTH DATA — Ingestão e consulta
+  # --------------------------------------------------------------------------
+  /health-data/sync:
+    post:
+      tags: [health-data]
+      summary: Disparar sincronização de dados de saúde
+      description: >
+        Inicia a busca e ingestão de dados do provider para o usuário,
+        para o período especificado. Operação assíncrona.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+      responses:
+        '202':
+          description: Sincronização iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health-data/{user_id}/summary:
+    get:
+      tags: [health-data]
+      summary: Resumo dos dados de saúde de um dia
+      description: >
+        Retorna dados normalizados de sono, passos, frequência cardíaca,
+        atividades e estresse para o usuário na data especificada.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2024-01-15"
+      responses:
+        '200':
+          description: Resumo de dados do dia
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthSummaryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # --------------------------------------------------------------------------
+  # READINESS — Daily Readiness Score
+  # --------------------------------------------------------------------------
+  /readiness/{user_id}:
+    get:
+      tags: [readiness]
+      summary: Obter Daily Readiness Score
+      description: >
+        Retorna o Daily Readiness Score para o usuário na data especificada,
+        com contribuições por métrica e insight de recomendação.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "Padrão: hoje"
+          example: "2024-01-15"
+      responses:
+        '200':
+          description: Daily Readiness Score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Dados insuficientes para calcular o score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /readiness/{user_id}/history:
+    get:
+      tags: [readiness]
+      summary: Histórico de Daily Readiness
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lista de scores no período
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReadinessSummary'
+
+# ---------------------------------------------------------------------------
+# COMPONENTS
+# ---------------------------------------------------------------------------
+components:
+
+  schemas:
+
+    # --- Connect ---
+    AuthUrlResponse:
+      type: object
+      required: [auth_url, state]
+      properties:
+        auth_url:
+          type: string
+          example: "https://accounts.google.com/o/oauth2/auth?..."
+        state:
+          type: string
+          description: Token anti-CSRF para validar o callback
+
+    OAuthCallbackRequest:
+      type: object
+      required: [code, state, user_id, redirect_uri]
+      properties:
+        code:
+          type: string
+        state:
+          type: string
+        user_id:
+          type: string
+        redirect_uri:
+          type: string
+
+    ConnectResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        provider:
+          type: string
+          example: google_fit
+        connected:
+          type: boolean
+        connected_at:
+          type: string
+          format: date-time
+
+    # --- Health Data ---
+    SyncRequest:
+      type: object
+      required: [user_id, provider, start_date, end_date]
+      properties:
+        user_id:
+          type: string
+        provider:
+          type: string
+          enum: [google_fit]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        metric_types:
+          type: array
+          items:
+            type: string
+            enum: [sleep, steps, activity, heart_rate, stress]
+          description: "Padrão: todas as métricas"
+
+    SyncResponse:
+      type: object
+      properties:
+        sync_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        user_id:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+
+    HealthSummaryResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        date:
+          type: string
+          format: date
+        sleep:
+          $ref: '#/components/schemas/SleepData'
+        steps:
+          $ref: '#/components/schemas/StepsData'
+        heart_rate:
+          $ref: '#/components/schemas/HeartRateData'
+        activity:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityData'
+        stress:
+          $ref: '#/components/schemas/StressData'
+
+    SleepData:
+      type: object
+      properties:
+        duration_minutes:
+          type: integer
+        deep_sleep_minutes:
+          type: integer
+        light_sleep_minutes:
+          type: integer
+        rem_sleep_minutes:
+          type: integer
+        awake_minutes:
+          type: integer
+        sleep_score:
+          type: number
+          nullable: true
+
+    StepsData:
+      type: object
+      properties:
+        total_steps:
+          type: integer
+        hourly_steps:
+          type: array
+          items:
+            type: object
+            properties:
+              hour:
+                type: integer
+              steps:
+                type: integer
+
+    HeartRateData:
+      type: object
+      properties:
+        resting_bpm:
+          type: number
+        average_bpm:
+          type: number
+        max_bpm:
+          type: number
+        min_bpm:
+          type: number
+
+    ActivityData:
+      type: object
+      properties:
+        activity_type:
+          type: string
+          example: running
+        duration_minutes:
+          type: integer
+        intensity:
+          type: string
+          enum: [low, moderate, high]
+        calories_burned:
+          type: number
+
+    StressData:
+      type: object
+      properties:
+        stress_score:
+          type: number
+          nullable: true
+        available:
+          type: boolean
+
+    # --- Readiness ---
+    ReadinessResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        date:
+          type: string
+          format: date
+        readiness_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 72.5
+        readiness_category:
+          type: string
+          enum: [rest, light, moderate, intense]
+          example: moderate
+        contributions:
+          $ref: '#/components/schemas/ReadinessContributions'
+        insight:
+          type: string
+          example: "Seu sono foi bom e sua FC de repouso está normal. Bom dia para um treino moderado."
+        calculated_at:
+          type: string
+          format: date-time
+
+    ReadinessContributions:
+      type: object
+      properties:
+        sleep:
+          type: number
+          description: Contribuição do sono (0-100)
+        heart_rate:
+          type: number
+          description: Contribuição da FC de repouso (0-100)
+        activity:
+          type: number
+          description: Contribuição da carga de atividade recente (0-100)
+        stress:
+          type: number
+          nullable: true
+          description: Contribuição do estresse (null se indisponível)
+
+    ReadinessSummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        readiness_score:
+          type: number
+        readiness_category:
+          type: string
+          enum: [rest, light, moderate, intense]
+
+    # --- Errors ---
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Dados inválidos na requisição
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

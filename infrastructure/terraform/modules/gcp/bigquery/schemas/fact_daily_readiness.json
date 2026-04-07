@@ -1,0 +1,13 @@
+[
+  {"name": "readiness_id",             "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "user_id",                  "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "date",                     "type": "DATE",    "mode": "REQUIRED"},
+  {"name": "readiness_score",          "type": "FLOAT64", "mode": "REQUIRED"},
+  {"name": "readiness_category",       "type": "STRING",  "mode": "REQUIRED"},
+  {"name": "sleep_score_contribution", "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "hr_score_contribution",    "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "activity_score_contribution", "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "stress_score_contribution","type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "insight_text",             "type": "STRING",  "mode": "NULLABLE"},
+  {"name": "calculated_at",            "type": "TIMESTAMP","mode": "NULLABLE"}
+]

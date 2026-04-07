@@ -1,0 +1,36 @@
+# Secrets — NUNCA commitar
+.env
+*.key
+*.pem
+credentials.json
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Mobile
+node_modules/
+.expo/
+dist/
+*.jks
+*.keystore
+
+# Data local
+backend/data/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
