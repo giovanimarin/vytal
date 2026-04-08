@@ -6,7 +6,20 @@ import {
 import { useRouter } from 'expo-router'
 import { ScoreRing } from '../../src/components/ui/ScoreRing'
 import { ContributionBar } from '../../src/components/features/ContributionBar'
-import { useReadiness, useSyncHealthData } from '../../src/hooks/useReadiness'
+import { ScoreHistory } from '../../src/components/features/ScoreHistory'
+import { SleepDetails } from '../../src/components/features/SleepDetails'
+import { HRZones } from '../../src/components/features/HRZones'
+import { StepsCalories } from '../../src/components/features/StepsCalories'
+import { AdvancedMetrics } from '../../src/components/features/AdvancedMetrics'
+import { WellnessFeedback } from '../../src/components/features/WellnessFeedback'
+import {
+  useReadiness,
+  useReadinessHistory,
+  useAdvancedMetrics,
+  useSyncHealthData,
+  useWellnessFeedback,
+} from '../../src/hooks/useReadiness'
+import { useHealthSummary } from '../../src/hooks/useHealthData'
 import { useAuthStore } from '../../src/store/authStore'
 
 function todayISO() {
@@ -23,10 +36,23 @@ export default function ReadinessScreen() {
   const userId = useAuthStore((s) => s.userId)
   const reset = useAuthStore((s) => s.reset)
   const today = todayISO()
+  const sevenDaysAgo = sevenDaysAgoISO()
   const router = useRouter()
 
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
   const { data, isLoading, error, refetch } = useReadiness(userId, today)
+  const { data: history } = useReadinessHistory(userId, sevenDaysAgo, today)
+  const { data: healthSummary } = useHealthSummary(userId, today)
+  const { data: advancedMetrics, isLoading: advancedLoading } = useAdvancedMetrics(userId, today)
+  const { data: existingFeedback } = useWellnessFeedback(userId, today)
   const sync = useSyncHealthData()
+
+  const totalCalories = healthSummary?.activity?.length
+    ? healthSummary.activity.reduce((sum, a) => sum + (a.calories_burned ?? 0), 0)
+    : null
+
+  const showFeedback = userId && !feedbackSubmitted && !existingFeedback
 
   function handleDisconnect() {
     reset()
@@ -38,7 +64,7 @@ export default function ReadinessScreen() {
     try {
       await sync.mutateAsync({
         userId,
-        startDate: sevenDaysAgoISO(),
+        startDate: sevenDaysAgo,
         endDate: today,
       })
       await refetch()
@@ -103,6 +129,35 @@ export default function ReadinessScreen() {
               <ContributionBar label="Estresse"         value={data.stress_score_contribution}   weight="10%" />
             </View>
           </View>
+
+          {/* 7-day history */}
+          {history && history.length > 0 && (
+            <ScoreHistory history={history} />
+          )}
+
+          {/* Steps & calories */}
+          <StepsCalories
+            steps={healthSummary?.steps?.total_steps ?? null}
+            calories={totalCalories}
+          />
+
+          {/* HR Zones */}
+          <HRZones heartRate={healthSummary?.heart_rate ?? null} />
+
+          {/* Sleep Details */}
+          <SleepDetails sleep={healthSummary?.sleep ?? null} />
+
+          {/* Advanced Metrics */}
+          <AdvancedMetrics metrics={advancedMetrics ?? null} isLoading={advancedLoading} />
+
+          {/* Wellness Feedback */}
+          {showFeedback && (
+            <WellnessFeedback
+              userId={userId}
+              date={today}
+              onSubmitted={() => setFeedbackSubmitted(true)}
+            />
+          )}
 
           <TouchableOpacity
             style={[styles.syncButton, sync.isPending && styles.syncButtonDisabled]}

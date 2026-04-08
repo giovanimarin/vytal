@@ -111,6 +111,19 @@ CREATE TABLE IF NOT EXISTS fact_daily_readiness (
     calculated_at                TEXT NOT NULL,
     UNIQUE(user_id, date)
 );
+
+CREATE TABLE IF NOT EXISTS wellness_feedback (
+    feedback_id         TEXT PRIMARY KEY,
+    user_id             TEXT NOT NULL,
+    date                TEXT NOT NULL,
+    feeling_score       INTEGER,
+    workout_worthwhile  INTEGER,
+    workout_readiness   TEXT,
+    energy_level        INTEGER,
+    notes               TEXT,
+    created_at          TEXT NOT NULL,
+    UNIQUE(user_id, date)
+);
 """
 
 

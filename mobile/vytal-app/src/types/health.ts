@@ -1,5 +1,32 @@
 export type ReadinessCategory = 'rest' | 'light' | 'moderate' | 'intense'
 
+export interface AdvancedMetricsResponse {
+  user_id: string
+  date: string
+  social_jetlag: {
+    value_hours: number
+    interpretation: string
+  } | null
+  recovery_curve: {
+    days_to_full_recovery: number
+    interpretation: string
+  } | null
+  signal_quality: {
+    quality_score: number
+    quality_label: 'good' | 'moderate' | 'poor'
+    interpretation: string
+  } | null
+}
+
+export interface WellnessFeedback {
+  user_id: string
+  date: string
+  feeling_score: number
+  trained_today: boolean | null
+  workout_worth_it: boolean | null
+  submitted_at: string
+}
+
 export interface ReadinessContributions {
   sleep: number
   heart_rate: number
