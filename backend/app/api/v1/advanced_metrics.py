@@ -1,6 +1,6 @@
 from datetime import date as _date
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.services.advanced_metrics_service import AdvancedMetricsService
 
