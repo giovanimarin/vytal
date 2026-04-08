@@ -56,6 +56,7 @@ jobs:
             --image ${{ steps.tag.outputs.tag }} \
             --region ${{ env.REGION }} \
             --project ${{ secrets.GCP_PROJECT_ID }} \
+            --set-env-vars "ENVIRONMENT=production,CONFIG_PATH=/app/config.yaml,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},SECRET_KEY=${{ secrets.SECRET_KEY }},GOOGLE_REDIRECT_URI=https://vytal-backend-production-${{ secrets.GCP_PROJECT_ID }}.a.run.app/api/v1/connect/google_fit/callback" \
             --quiet
 
       - name: Show service URL
