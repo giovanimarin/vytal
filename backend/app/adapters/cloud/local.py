@@ -4,7 +4,6 @@ StorageProvider → filesystem local
 WarehouseProvider → SQLite (via aiosqlite)
 PipelineProvider → DirectRunner
 """
-import json
 from pathlib import Path
 
 import aiosqlite

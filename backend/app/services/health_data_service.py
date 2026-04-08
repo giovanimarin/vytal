@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 
 from app.adapters.connectors.factory import get_connector
 from app.domain.health_metrics import METRIC_REGISTRY
-from app.domain.health_metrics.base import RawEvent
 from app.repositories.health_data_repo import HealthDataRepository
 from app.repositories.token_repo import TokenRepository
 from app.services.readiness_service import ReadinessService
