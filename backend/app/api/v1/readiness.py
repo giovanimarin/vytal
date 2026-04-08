@@ -3,9 +3,25 @@ from datetime import date as _date
 from fastapi import APIRouter, HTTPException, status
 
 from app.services.readiness_service import ReadinessService
+from app.services.advanced_metrics_service import AdvancedMetricsService
 
 router = APIRouter(prefix="/readiness", tags=["readiness"])
 _service = ReadinessService()
+_advanced_service = AdvancedMetricsService()
+
+
+@router.get("/{user_id}/history")
+async def get_readiness_history(user_id: str, start_date: str, end_date: str):
+    """Histórico de Daily Readiness Score no período."""
+    history = await _service.get_history(user_id, start_date, end_date)
+    return history
+
+
+@router.get("/{user_id}/advanced")
+async def get_advanced_metrics(user_id: str, date: str = None):
+    """Retorna métricas avançadas: Social Jetlag, Recovery Curve e Signal Quality."""
+    target_date = date if date is not None else str(_date.today())
+    return await _advanced_service.calculate(user_id, target_date)
 
 
 @router.get("/{user_id}")
@@ -20,10 +36,3 @@ async def get_readiness(user_id: str, date: str = None):
             detail="Insufficient data to calculate readiness. Sync health data first.",
         )
     return record
-
-
-@router.get("/{user_id}/history")
-async def get_readiness_history(user_id: str, start_date: str, end_date: str):
-    """Histórico de Daily Readiness Score no período."""
-    history = await _service.get_history(user_id, start_date, end_date)
-    return history
