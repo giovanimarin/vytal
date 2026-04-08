@@ -32,7 +32,9 @@ def test_sleep_contribution_ideal(service):
 
 
 def test_sleep_contribution_poor(service):
-    assert service._sleep_contribution(_sleep(duration_minutes=200)) == 25.0
+    # 4h a 5h = 25.0; 200min = 3h20 < 4h = 0.0
+    assert service._sleep_contribution(_sleep(duration_minutes=200)) == 0.0
+    assert service._sleep_contribution(_sleep(duration_minutes=270)) == 25.0  # 4h30
 
 
 def test_sleep_contribution_zero_duration(service):
