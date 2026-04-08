@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 
 from app.adapters.cloud.factory import get_warehouse
-from app.domain.health_metrics.base import HealthMetric
+from app.domain.health_metrics.base import RawEvent, HealthMetric
 
 
 class HealthDataRepository:

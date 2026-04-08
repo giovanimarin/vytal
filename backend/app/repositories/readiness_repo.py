@@ -1,4 +1,3 @@
-from datetime import datetime
 
 from app.adapters.cloud.factory import get_warehouse
 
