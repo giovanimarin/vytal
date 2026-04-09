@@ -5,7 +5,7 @@ import axios from 'axios'
 const PROD_URL = 'https://vytal-backend-production-368456539470.us-central1.run.app/api/v1'
 
 const BASE_URL = typeof window !== 'undefined'
-  ? PROD_URL  // web sempre usa Cloud Run
+  ? (__DEV__ ? 'http://localhost:8002/api/v1' : PROD_URL)
   : __DEV__
     ? 'http://192.168.2.59:8001/api/v1'
     : PROD_URL

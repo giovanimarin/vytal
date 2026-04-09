@@ -7,5 +7,5 @@ import { useAuthStore } from '../src/store/authStore'
 
 export default function Index() {
   const isConnected = useAuthStore((s) => s.isConnected)
-  return <Redirect href={isConnected ? '/(tabs)' : '/connect'} />
+  return <Redirect href={isConnected ? '/(dashboard)' : '/login'} />
 }

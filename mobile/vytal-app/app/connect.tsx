@@ -66,7 +66,7 @@ export default function ConnectScreen() {
       })
       setUserId(MVP_USER_ID)
       setConnected(true)
-      router.replace('/(tabs)')
+      router.replace('/(dashboard)')
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
       setErrorMsg(`Falha ao completar a conexão: ${msg}`)
@@ -116,7 +116,7 @@ export default function ConnectScreen() {
           onPress={() => {
             setUserId(MVP_USER_ID)
             setConnected(true)
-            router.replace('/(tabs)')
+            router.replace('/(dashboard)')
           }}
         >
           <Text style={styles.devButtonText}>Modo de teste (dados simulados)</Text>
