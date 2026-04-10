@@ -6,14 +6,12 @@ import {
   StyleSheet,
   Modal,
   Animated,
-  Dimensions,
   TouchableWithoutFeedback,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '../../store/authStore'
 
 const MENU_WIDTH = 280
-const SCREEN_WIDTH = Dimensions.get('window').width
 
 interface Props {
   visible: boolean
@@ -22,7 +20,9 @@ interface Props {
 
 export function SideMenu({ visible, onClose }: Props) {
   const router = useRouter()
-  const { reset } = useAuthStore()
+  const logout = useAuthStore((s) => s.logout)
+  const userName = useAuthStore((s) => s.userProfile?.name)
+  const userEmail = useAuthStore((s) => s.userProfile?.email)
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function SideMenu({ visible, onClose }: Props) {
   function handleSignOut() {
     onClose()
     setTimeout(() => {
-      reset()
+      logout()
       router.replace('/login')
     }, 200)
   }
@@ -58,7 +58,15 @@ export function SideMenu({ visible, onClose }: Props) {
         <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
           {/* Header */}
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}>Vytal</Text>
+            <View style={styles.headerInfo}>
+              <Text style={styles.menuTitle}>Vytal</Text>
+              {userName ? (
+                <Text style={styles.menuUserName}>{userName}</Text>
+              ) : null}
+              {userEmail ? (
+                <Text style={styles.menuUserEmail}>{userEmail}</Text>
+              ) : null}
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
@@ -66,9 +74,20 @@ export function SideMenu({ visible, onClose }: Props) {
 
           {/* Menu items */}
           <View style={styles.menuItems}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigate('/connect')}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigate('/(dashboard)/profile')}
+            >
+              <Text style={styles.menuItemIcon}>👤</Text>
+              <Text style={styles.menuItemText}>Meu Perfil</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigate('/(dashboard)/data-sources')}
+            >
               <Text style={styles.menuItemIcon}>🔗</Text>
-              <Text style={styles.menuItemText}>Conectar Google Fit</Text>
+              <Text style={styles.menuItemText}>Fontes de Dados</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => navigate('/catalog')}>
@@ -120,18 +139,32 @@ const styles = StyleSheet.create({
   },
   menuHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
+  },
+  headerInfo: {
+    flex: 1,
+    gap: 2,
   },
   menuTitle: {
     fontSize: 24,
     fontWeight: '800',
     color: '#f8fafc',
     letterSpacing: -0.5,
+  },
+  menuUserName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#cbd5e1',
+    marginTop: 4,
+  },
+  menuUserEmail: {
+    fontSize: 12,
+    color: '#64748b',
   },
   closeButton: {
     width: 32,

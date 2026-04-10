@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     secret_key: str = Field("dev-secret-change-in-prod", env="SECRET_KEY")
     environment: str = Field("local", env="ENVIRONMENT")
     config_path: str = Field("./config.yaml", env="CONFIG_PATH")
+    jwt_secret_key: str = Field("dev-secret-change-in-production", env="JWT_SECRET_KEY")
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 7
 
     class Config:
         env_file = ".env"
@@ -19,3 +23,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    return settings

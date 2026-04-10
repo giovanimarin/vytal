@@ -25,6 +25,10 @@ python-dotenv==1.0.1
 # Utils
 python-dateutil==2.9.0
 
+# Auth
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.0
+
 # Dev / test
 pytest==8.3.3
 pytest-asyncio==0.24.0

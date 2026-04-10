@@ -124,6 +124,31 @@ CREATE TABLE IF NOT EXISTS wellness_feedback (
     created_at          TEXT NOT NULL,
     UNIQUE(user_id, date)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id       TEXT PRIMARY KEY,
+    email         TEXT NOT NULL UNIQUE,
+    name          TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    birth_date    TEXT,
+    weight_kg     REAL,
+    height_cm     REAL,
+    goal          TEXT DEFAULT 'general_wellness',
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token_id   TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 """
 
 
@@ -168,10 +193,12 @@ class LocalWarehouseProvider(WarehouseProvider):
             await db.commit()
             return len(rows)
 
-    async def query(self, sql: str, params: dict = None) -> list[dict]:
+    async def query(self, sql: str, params=None) -> list[dict]:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            if params:
+            if params is None:
+                cursor = await db.execute(sql)
+            elif isinstance(params, dict):
                 # Converte :param para ? e lista de valores
                 import re
                 keys = re.findall(r":(\w+)", sql)
@@ -179,8 +206,10 @@ class LocalWarehouseProvider(WarehouseProvider):
                 values = [params[k] for k in keys]
                 cursor = await db.execute(sql, values)
             else:
-                cursor = await db.execute(sql)
+                # Lista posicional com placeholders ?
+                cursor = await db.execute(sql, params)
             rows = await cursor.fetchall()
+            await db.commit()
             return [dict(row) for row in rows]
 
 
