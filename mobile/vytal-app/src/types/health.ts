@@ -4,18 +4,21 @@ export interface AdvancedMetricsResponse {
   user_id: string
   date: string
   social_jetlag: {
-    value_hours: number
+    score: number | null
     interpretation: string
-  } | null
+    available: boolean
+  }
   recovery_curve: {
-    days_to_full_recovery: number
+    avg_recovery_days: number | null
     interpretation: string
-  } | null
+    available: boolean
+  }
   signal_quality: {
-    quality_score: number
-    quality_label: 'good' | 'moderate' | 'poor'
+    score: number
+    flag: 'reliable' | 'caution' | 'incomplete'
     interpretation: string
-  } | null
+    issues: string[]
+  }
 }
 
 export interface WellnessFeedback {

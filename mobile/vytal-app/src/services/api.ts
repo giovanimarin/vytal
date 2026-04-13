@@ -9,11 +9,9 @@ const PROD_URL = 'https://vytal-backend-production-368456539470.us-central1.run.
 
 const BASE_URL =
   typeof window !== 'undefined'
-    ? __DEV__
-      ? 'http://localhost:8002/api/v1'
-      : PROD_URL
+    ? PROD_URL  // web sempre usa produção
     : __DEV__
-    ? 'http://192.168.2.59:8001/api/v1'
+    ? 'http://192.168.2.59:8002/api/v1'  // mobile dev usa IP local
     : PROD_URL
 
 export const api = axios.create({
