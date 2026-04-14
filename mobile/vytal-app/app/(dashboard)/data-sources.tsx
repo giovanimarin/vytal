@@ -6,14 +6,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Linking,
 } from 'react-native'
-import * as WebBrowser from 'expo-web-browser'
-import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import { api } from '../../src/services/api'
 import { useAuthStore } from '../../src/store/authStore'
-
-WebBrowser.maybeCompleteAuthSession()
 
 interface DataSource {
   id: string
@@ -60,15 +57,7 @@ export default function DataSourcesScreen() {
 
   const [connectedSources, setConnectedSources] = useState<Set<string>>(new Set())
   const [loadingSource, setLoadingSource] = useState<string | null>(null)
-  const [oauthState, setOauthState] = useState<string | null>(null)
-  const [pendingSourceId, setPendingSourceId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
-  // Listen for OAuth deep link callback
-  useEffect(() => {
-    const subscription = Linking.addEventListener('url', handleOAuthCallback)
-    return () => subscription.remove()
-  }, [oauthState, pendingSourceId])
 
   // Check Google Fit connection status on mount
   useEffect(() => {
@@ -120,55 +109,16 @@ export default function DataSourcesScreen() {
 
   async function connectGoogleFit() {
     setLoadingSource('google_fit')
+    setErrorMsg(null)
     try {
       const { data } = await api.get('/connect/google_fit/auth-url', {
         params: { user_id: userId },
       })
-      setOauthState(data.state)
-      setPendingSourceId('google_fit')
-
-      // Use WebBrowser for in-app OAuth on mobile
-      const redirectUrl = Linking.createURL('oauth/callback')
-      const result = await WebBrowser.openAuthSessionAsync(data.auth_url, redirectUrl)
-
-      if (result.type === 'success' && result.url) {
-        await processOAuthCallback(result.url)
-      } else if (result.type === 'cancel' || result.type === 'dismiss') {
-        // User cancelled — no error
-      }
+      // Open OAuth URL in system browser
+      await Linking.openURL(data.auth_url)
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
       setErrorMsg(`Não foi possível iniciar a conexão: ${msg}`)
-    } finally {
-      setLoadingSource(null)
-    }
-  }
-
-  async function handleOAuthCallback(event: { url: string }) {
-    if (!event.url.includes('oauth/callback')) return
-    await processOAuthCallback(event.url)
-  }
-
-  async function processOAuthCallback(url: string) {
-    const { queryParams } = Linking.parse(url)
-    const code = queryParams?.code as string | undefined
-    if (!code || !oauthState) return
-
-    setLoadingSource(pendingSourceId)
-    setErrorMsg(null)
-    try {
-      const redirectUri = Linking.createURL('oauth/callback')
-      await api.post('/connect/google_fit/callback', {
-        code,
-        state: oauthState,
-        redirect_uri: redirectUri,
-      })
-      setConnectedSources((prev) => new Set(prev).add('google_fit'))
-      setOauthState(null)
-      setPendingSourceId(null)
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
-      setErrorMsg(`Falha ao completar a conexão: ${msg}`)
     } finally {
       setLoadingSource(null)
     }
