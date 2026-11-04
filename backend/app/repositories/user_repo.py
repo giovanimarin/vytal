@@ -21,6 +21,8 @@ class UserRepository:
             "weight_kg": None,
             "height_cm": None,
             "goal": "general_wellness",
+            "gender": None,
+            "preferred_modalities": None,
             "created_at": now,
             "updated_at": now,
         }

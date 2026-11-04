@@ -19,6 +19,12 @@ tags:
     description: Ingestão e consulta de dados de saúde
   - name: readiness
     description: Daily Readiness Score e insights
+  - name: readiness-modalities
+    description: Readiness score 0–100 por modalidade de exercício
+  - name: workouts
+    description: Registro de treinos e catálogo de exercícios
+  - name: muscles
+    description: Recuperação muscular e Body Map
 
 # ---------------------------------------------------------------------------
 # PATHS
@@ -475,3 +481,245 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+
+# ---------------------------------------------------------------------------
+# MÓDULO 1 — READINESS POR MODALIDADE
+# ---------------------------------------------------------------------------
+
+  /readiness/modalities/{user_id}:
+    get:
+      summary: Readiness por modalidade
+      description: Retorna score 0–100 por modalidade de exercício para o dia.
+      tags: [readiness-modalities]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+          description: Data no formato YYYY-MM-DD (padrão hoje)
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModalityReadinessResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+# ---------------------------------------------------------------------------
+# MÓDULO 2 — TREINOS
+# ---------------------------------------------------------------------------
+
+  /workouts:
+    post:
+      summary: Registrar treino
+      tags: [workouts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkoutInput'
+      responses:
+        '201':
+          description: Treino registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /workouts/{user_id}:
+    get:
+      summary: Histórico de treinos
+      tags: [workouts]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: start_date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: end_date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Lista de treinos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workout'
+
+  /workouts/exercises/catalog:
+    get:
+      summary: Catálogo de exercícios
+      tags: [workouts]
+      responses:
+        '200':
+          description: Lista de exercícios com mapeamento muscular
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExerciseCatalogItem'
+
+# ---------------------------------------------------------------------------
+# MÓDULO 2 — RECUPERAÇÃO MUSCULAR
+# ---------------------------------------------------------------------------
+
+  /muscles/{user_id}/recovery:
+    get:
+      summary: Recuperação muscular
+      description: Score de recuperação 0–100 por grupo muscular.
+      tags: [muscles]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MuscleRecoveryResponse'
+
+  /muscles/{user_id}/suggestion:
+    get:
+      summary: Sugestão do dia
+      description: Grupo muscular mais recuperado e pronto para treinar.
+      tags: [muscles]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Sugestão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MuscleSuggestion'
+
+# ---------------------------------------------------------------------------
+# SCHEMAS — novos módulos
+# ---------------------------------------------------------------------------
+# (adicionar dentro do components/schemas existente)
+
+x-new-schemas:
+  ModalityReadiness:
+    type: object
+    properties:
+      record_id:       { type: string }
+      user_id:         { type: string }
+      date:            { type: string, format: date }
+      modality:        { type: string, enum: [crossfit, corrida, academia, tenis, pilates, surfe, yoga, ciclismo] }
+      score:           { type: number, minimum: 0, maximum: 100 }
+      status:          { type: string, enum: [green, yellow, red] }
+      recommendation:  { type: string }
+      hrv_available:   { type: boolean }
+      low_confidence:  { type: boolean }
+      calculated_at:   { type: string, format: date-time }
+
+  ModalityReadinessResponse:
+    type: object
+    properties:
+      user_id:    { type: string }
+      date:       { type: string, format: date }
+      modalities:
+        type: array
+        items:
+          $ref: '#/x-new-schemas/ModalityReadiness'
+
+  WorkoutInput:
+    type: object
+    required: [user_id, modality, intensity, duration_min]
+    properties:
+      user_id:      { type: string }
+      modality:     { type: string, enum: [crossfit, corrida, academia, tenis, pilates, surfe, yoga, ciclismo] }
+      intensity:    { type: string, enum: [leve, moderado, intenso] }
+      duration_min: { type: integer, minimum: 1 }
+      date:         { type: string, format: date }
+      notes:        { type: string }
+      free_text:    { type: string }
+      exercises:
+        type: array
+        items:
+          type: object
+          properties:
+            name: { type: string }
+            sets: { type: integer }
+            reps: { type: integer }
+
+  Workout:
+    type: object
+    properties:
+      workout_id:   { type: string }
+      user_id:      { type: string }
+      date:         { type: string, format: date }
+      modality:     { type: string }
+      intensity:    { type: string }
+      duration_min: { type: integer }
+      notes:        { type: string, nullable: true }
+      exercises:
+        type: array
+        items:
+          type: object
+          properties:
+            exercise_id:   { type: string }
+            name:          { type: string }
+            muscle_groups: { type: array, items: { type: string } }
+            sets:          { type: integer, nullable: true }
+            reps:          { type: integer, nullable: true }
+
+  ExerciseCatalogItem:
+    type: object
+    properties:
+      name:      { type: string }
+      primary:   { type: array, items: { type: string } }
+      secondary: { type: array, items: { type: string } }
+
+  MuscleRecovery:
+    type: object
+    properties:
+      muscle_group:                 { type: string }
+      recovery_score:               { type: number, minimum: 0, maximum: 100 }
+      last_workout_id:              { type: string, nullable: true }
+      estimated_full_recovery_at:   { type: string, format: date-time, nullable: true }
+
+  MuscleRecoveryResponse:
+    type: object
+    properties:
+      user_id: { type: string }
+      date:    { type: string, format: date }
+      muscles:
+        type: array
+        items:
+          $ref: '#/x-new-schemas/MuscleRecovery'
+
+  MuscleSuggestion:
+    type: object
+    properties:
+      suggestion: { type: string, nullable: true }
+      score:      { type: number, nullable: true }
+      message:    { type: string }
