@@ -347,4 +347,3 @@ D02/D03/D04 ampliam o desenho e requerem reavaliar estados, edições, notas e c
 - Validação documental executada: integridade da transcrição, presença única das 20 decisões na fonte, cobertura das 20 D/20 DEC/20 GF/15 riscos nas matrizes e referências locais, além de diff/hashes dos documentos de base.
 - Não reexecutar testes funcionais, builds, migrações ou deploy para validar uma transcrição documental. Nenhum teste crítico de produto é declarado aprovado aqui.
 - Publicação será em branch própria e PR **draft**, se a API/permissões permitirem; falha do PR não desfaz commit/push do registro nem aprova a especificação.
-
