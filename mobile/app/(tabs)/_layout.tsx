@@ -18,6 +18,14 @@ export default function TabsLayout() {
         options={{ title: 'Hoje', tabBarLabel: 'Hoje' }}
       />
       <Tabs.Screen
+        name="modalities"
+        options={{ title: 'Modalidades', tabBarLabel: 'Modalidades' }}
+      />
+      <Tabs.Screen
+        name="workout-log"
+        options={{ title: 'Treino', tabBarLabel: 'Treino' }}
+      />
+      <Tabs.Screen
         name="data"
         options={{ title: 'Dados', tabBarLabel: 'Dados' }}
       />

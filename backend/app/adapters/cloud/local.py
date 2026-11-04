@@ -4,7 +4,6 @@ StorageProvider → filesystem local
 WarehouseProvider → SQLite (via aiosqlite)
 PipelineProvider → DirectRunner
 """
-import json
 from pathlib import Path
 
 import aiosqlite
@@ -112,6 +111,97 @@ CREATE TABLE IF NOT EXISTS fact_daily_readiness (
     calculated_at                TEXT NOT NULL,
     UNIQUE(user_id, date)
 );
+
+CREATE TABLE IF NOT EXISTS wellness_feedback (
+    feedback_id         TEXT PRIMARY KEY,
+    user_id             TEXT NOT NULL,
+    date                TEXT NOT NULL,
+    feeling_score       INTEGER,
+    workout_worthwhile  INTEGER,
+    workout_readiness   TEXT,
+    energy_level        INTEGER,
+    notes               TEXT,
+    created_at          TEXT NOT NULL,
+    UNIQUE(user_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id               TEXT PRIMARY KEY,
+    email                 TEXT NOT NULL UNIQUE,
+    name                  TEXT NOT NULL,
+    password_hash         TEXT NOT NULL,
+    birth_date            TEXT,
+    weight_kg             REAL,
+    height_cm             REAL,
+    goal                  TEXT DEFAULT 'general_wellness',
+    gender                TEXT DEFAULT NULL,
+    preferred_modalities  TEXT DEFAULT NULL,
+    created_at            TEXT NOT NULL,
+    updated_at            TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token_id   TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS fact_readiness_by_modality (
+    record_id           TEXT PRIMARY KEY,
+    user_id             TEXT NOT NULL,
+    date                TEXT NOT NULL,
+    modality            TEXT NOT NULL,
+    score               REAL NOT NULL,
+    status              TEXT NOT NULL,
+    recommendation      TEXT,
+    hrv_available       INTEGER NOT NULL DEFAULT 0,
+    low_confidence      INTEGER NOT NULL DEFAULT 0,
+    calculated_at       TEXT NOT NULL,
+    UNIQUE(user_id, date, modality)
+);
+
+CREATE TABLE IF NOT EXISTS workout_history (
+    workout_id      TEXT PRIMARY KEY,
+    user_id         TEXT NOT NULL,
+    date            TEXT NOT NULL,
+    modality        TEXT NOT NULL,
+    intensity       TEXT NOT NULL,
+    duration_min    INTEGER NOT NULL,
+    notes           TEXT,
+    created_at      TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workout_exercises (
+    exercise_id     TEXT PRIMARY KEY,
+    workout_id      TEXT NOT NULL,
+    name            TEXT NOT NULL,
+    muscle_groups   TEXT NOT NULL,
+    sets            INTEGER,
+    reps            INTEGER,
+    FOREIGN KEY (workout_id) REFERENCES workout_history(workout_id)
+);
+
+CREATE TABLE IF NOT EXISTS muscle_recovery (
+    record_id           TEXT PRIMARY KEY,
+    user_id             TEXT NOT NULL,
+    date                TEXT NOT NULL,
+    muscle_group        TEXT NOT NULL,
+    recovery_score      REAL NOT NULL,
+    last_workout_id     TEXT,
+    estimated_full_recovery_at  TEXT,
+    updated_at          TEXT NOT NULL,
+    UNIQUE(user_id, date, muscle_group)
+);
+
+CREATE INDEX IF NOT EXISTS idx_workout_history_user_date ON workout_history(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_muscle_recovery_user_date ON muscle_recovery(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_readiness_modality_user_date ON fact_readiness_by_modality(user_id, date);
 """
 
 
@@ -156,10 +246,12 @@ class LocalWarehouseProvider(WarehouseProvider):
             await db.commit()
             return len(rows)
 
-    async def query(self, sql: str, params: dict = None) -> list[dict]:
+    async def query(self, sql: str, params=None) -> list[dict]:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            if params:
+            if params is None:
+                cursor = await db.execute(sql)
+            elif isinstance(params, dict):
                 # Converte :param para ? e lista de valores
                 import re
                 keys = re.findall(r":(\w+)", sql)
@@ -167,8 +259,10 @@ class LocalWarehouseProvider(WarehouseProvider):
                 values = [params[k] for k in keys]
                 cursor = await db.execute(sql, values)
             else:
-                cursor = await db.execute(sql)
+                # Lista posicional com placeholders ?
+                cursor = await db.execute(sql, params)
             rows = await cursor.fetchall()
+            await db.commit()
             return [dict(row) for row in rows]
 
 

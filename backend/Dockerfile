@@ -22,6 +22,6 @@ USER appuser
 # Diretório para o SQLite em modo local (montado como volume em dev)
 RUN mkdir -p /app/data
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

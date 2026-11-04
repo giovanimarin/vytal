@@ -43,6 +43,102 @@ export interface ActivityData {
   calories_burned: number
 }
 
+// ─── Modality Readiness ──────────────────────────────────────────────────────
+
+export type ModalityStatus = 'green' | 'yellow' | 'red'
+
+export interface ModalityReadiness {
+  record_id: string
+  user_id: string
+  date: string
+  modality: string
+  score: number
+  status: ModalityStatus
+  recommendation: string
+  hrv_available: boolean
+  low_confidence: boolean
+  calculated_at: string
+}
+
+export interface ModalityReadinessResponse {
+  user_id: string
+  date: string
+  modalities: ModalityReadiness[]
+}
+
+// ─── Workouts ────────────────────────────────────────────────────────────────
+
+export type WorkoutModality = 'crossfit' | 'corrida' | 'academia' | 'tenis' | 'pilates' | 'surfe' | 'yoga' | 'ciclismo'
+export type WorkoutIntensity = 'leve' | 'moderado' | 'intenso'
+
+export interface WorkoutExercise {
+  exercise_id: string
+  workout_id: string
+  name: string
+  muscle_groups: string[]
+  sets: number | null
+  reps: number | null
+}
+
+export interface Workout {
+  workout_id: string
+  user_id: string
+  date: string
+  modality: WorkoutModality
+  intensity: WorkoutIntensity
+  duration_min: number
+  notes: string | null
+  exercises: WorkoutExercise[]
+  created_at: string
+}
+
+export interface WorkoutInput {
+  user_id: string
+  modality: WorkoutModality
+  intensity: WorkoutIntensity
+  duration_min: number
+  date?: string
+  notes?: string
+  exercises?: { name: string; sets?: number; reps?: number }[]
+  free_text?: string
+}
+
+export interface ExerciseCatalogItem {
+  name: string
+  primary: string[]
+  secondary: string[]
+}
+
+// ─── Muscle Recovery ─────────────────────────────────────────────────────────
+
+export type MuscleGroup =
+  | 'chest' | 'front_shoulders' | 'rear_shoulders'
+  | 'biceps' | 'triceps' | 'upper_back' | 'lower_back'
+  | 'core' | 'glutes' | 'quads' | 'hamstrings' | 'calves' | 'hip_flexors'
+
+export interface MuscleRecovery {
+  record_id: string
+  user_id: string
+  date: string
+  muscle_group: MuscleGroup
+  recovery_score: number
+  last_workout_id: string | null
+  estimated_full_recovery_at: string | null
+  updated_at: string
+}
+
+export interface MuscleRecoveryResponse {
+  user_id: string
+  date: string
+  muscles: MuscleRecovery[]
+}
+
+export interface MuscleSuggestion {
+  suggestion: MuscleGroup | null
+  score?: number
+  message: string
+}
+
 export interface HealthSummary {
   user_id: string
   date: string

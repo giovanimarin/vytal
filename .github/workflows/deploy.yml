@@ -8,7 +8,7 @@ on:
 
 env:
   REGION: us-central1
-  IMAGE: gcr.io/${{ secrets.GCP_PROJECT_ID }}/vytal-backend
+  IMAGE: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/vytal-backend/vytal-backend
 
 jobs:
   deploy-backend:
@@ -31,8 +31,8 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker --quiet
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
       - name: Set image tag
         id: tag
@@ -56,6 +56,7 @@ jobs:
             --image ${{ steps.tag.outputs.tag }} \
             --region ${{ env.REGION }} \
             --project ${{ secrets.GCP_PROJECT_ID }} \
+            --set-env-vars "ENVIRONMENT=production,CONFIG_PATH=/app/config.yaml,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},SECRET_KEY=${{ secrets.SECRET_KEY }},GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
             --quiet
 
       - name: Show service URL

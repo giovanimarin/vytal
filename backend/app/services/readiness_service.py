@@ -14,16 +14,16 @@ _WEIGHTS = {
 
 _CATEGORY_MAP = [
     (80, "intense"),
-    (50, "moderate"),
-    (30, "light"),
+    (60, "moderate"),
+    (40, "light"),
     (0,  "rest"),
 ]
 
 _INSIGHT_MAP = {
-    "intense":  "Sua recuperação está ótima! Hoje é um bom dia para um treino intenso.",
-    "moderate": "Você está bem recuperado. Um treino moderado ou cardio é recomendado.",
-    "light":    "Seu corpo ainda está se recuperando. Prefira atividades leves hoje.",
-    "rest":     "Seus indicadores sugerem que seu corpo precisa de descanso. Priorize o sono e a recuperação.",
+    "intense":  "Ótimo dia para treino intenso. Seu corpo está recuperado.",
+    "moderate": "Treino moderado recomendado. Evite ultrapassar 80% da FC máxima.",
+    "light":    "Prefira atividades leves hoje. Caminhada ou yoga são boas opções.",
+    "rest":     "Seu corpo pede descanso. Priorize sono e hidratação hoje.",
 }
 
 
