@@ -17,7 +17,7 @@ class HealthPermissionsActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val text = TextView(this)
-    text.text = "Vytal — Conexão Saúde\nLeitura opcional de exercícios, passos, distância, calorias, frequência cardíaca, sono, peso, velocidade e elevação. Os dados são enviados somente ao backend local SQLite da sua conta via rede Wi-Fi. Não solicitamos senha Garmin. Não enviamos dados a serviços de nuvem. Revogue acesso na Conexão Saúde. O histórico importado permanece no backend local até sua exclusão. Estimativas de readiness não são diagnóstico médico."
+    text.text = "Vytal — Conexão Saúde\\nLeitura opcional de exercícios, passos, distância, calorias, frequência cardíaca, sono, peso, velocidade e elevação. Os dados são enviados somente ao backend local SQLite da sua conta via rede Wi-Fi. Não solicitamos senha Garmin. Não enviamos dados a serviços de nuvem. Revogue acesso na Conexão Saúde. O histórico importado permanece no backend local até sua exclusão. Estimativas de readiness não são diagnóstico médico."
     text.textSize = 18f
     text.setPadding(32, 48, 32, 48)
     val scroll = ScrollView(this)
