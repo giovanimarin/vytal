@@ -90,3 +90,15 @@ def test_observed_response_contract_rejects_serialization_and_field_changes(befo
 
     with pytest.raises(ValueError, match="Observed v1 response contract differs"):
         assert_wire_equal(before, after)
+
+
+def test_explicit_additions_mode_accepts_new_operations_but_preserves_existing_contracts(schema):
+    added = copy.deepcopy(schema)
+    added['paths']['/api/v1/additive-only'] = {'get': {'responses': {'200': {'description': 'OK'}}}}
+    added['components']['schemas']['AddedOnly'] = {'type': 'object'}
+    with pytest.raises(ValueError):
+        assert_compatible(schema, added)
+    assert_compatible(schema, added, allow_additions=True)
+    added['components']['schemas']['WorkoutIn']['required'].append('notes')
+    with pytest.raises(ValueError):
+        assert_compatible(schema, added, allow_additions=True)

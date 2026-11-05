@@ -37,10 +37,12 @@ jobs:
       - name: Offline readiness evidence (not deployment approval)
         run: python backend/scripts/readiness_audit.py > backend/readiness-report.json
       - name: Public v1 OpenAPI compatibility
-        run: python backend/scripts/check_v1_contract.py --base origin/master --snapshot backend/tests/baseline/fixtures/openapi-v1.json
+        run: python backend/scripts/check_v1_contract.py --base origin/master --snapshot backend/tests/baseline/fixtures/openapi-v1.json --allow-additions
       - name: Lint authentication Python files
         run: >-
           ruff check --select E4,E7,E9,F,I,UP,B,SIM,C4,RUF,BLE
+          backend/app/health_connect backend/app/api/v1/health_connect.py
+          backend/app/api/v1/router.py backend/tests/unit/health_connect
           backend/app/auth/authorization.py backend/app/auth/dependencies.py
           backend/app/main.py backend/app/services/oauth_service.py
           backend/app/api/v1/connect.py backend/app/api/v1/health_data.py
@@ -66,7 +68,7 @@ jobs:
             backend/readiness-report.json
 
   android-regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: mobile/vytal-app
@@ -97,6 +99,46 @@ jobs:
           EXPO_PUBLIC_API_URL: https://api.example.invalid/api/v1
           CI: '1'
           EXPO_NO_TELEMETRY: '1'
+
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Native Health Connect development project and manifest
+        run: |
+          npx expo prebuild --platform android --no-install
+          node tests/health-connect-manifest.cjs
+        env:
+          NODE_ENV: development
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:8000/api/v1
+          EXPO_OFFLINE: '1'
+          EXPO_NO_TELEMETRY: '1'
+      - name: Compile development APK (no device, no EAS or deploy)
+        working-directory: mobile/vytal-app/android
+        run: |
+          if ! ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2 > /tmp/vytal-native-build.log 2>&1; then
+            tail -n 120 /tmp/vytal-native-build.log
+            python - <<'PYCODE'
+          import pathlib
+          lines=pathlib.Path('/tmp/vytal-native-build.log').read_text(errors='replace').splitlines()
+          errors=[line for line in lines if any(key in line for key in ['What went wrong', 'error:', 'Could not', 'Exception', 'failed'])]
+          text=' | '.join(errors[-12:])[:3000].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+          print('::error::Native APK compilation failed: '+text)
+          PYCODE
+            exit 1
+          fi
+        env:
+          NODE_ENV: development
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:8000/api/v1
+          EXPO_OFFLINE: '1'
+          EXPO_NO_TELEMETRY: '1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-health-connect-debug-apk
+          path: mobile/vytal-app/android/app/build/outputs/apk/debug/*.apk
+
 
   web-build:
     runs-on: ubuntu-latest

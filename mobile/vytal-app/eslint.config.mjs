@@ -1,7 +1,7 @@
 import tseslint from 'typescript-eslint'
 
 export default [{
-  files: ['tests/**/*.cjs', 'eslint.config.mjs', 'config/**/*.js', 'app.config.js'],
+  files: ['tests/**/*.cjs', 'eslint.config.mjs', 'config/**/*.js', 'plugins/**/*.js', 'app.config.js'],
   rules: { 'no-unreachable': 'error', 'no-constant-condition': 'error' },
 }, {
   files: ['**/*.ts', '**/*.tsx'],

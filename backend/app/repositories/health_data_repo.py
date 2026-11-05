@@ -51,10 +51,14 @@ class HealthDataRepository:
     ) -> list[dict]:
         warehouse = get_warehouse()
         table = f"normalized_{metric_type}"
-        return await warehouse.query(
+        rows = await warehouse.query(
             f"SELECT * FROM {table} WHERE user_id = :user_id AND date = :date",
             {"user_id": user_id, "date": date},
         )
+        # One authoritative per-day source; never sum Health Connect and Fit mirrors.
+        imported = [row for row in rows if str(row.get("source_event_id", "")).startswith("hc-day:")]
+        return imported or rows
+
 
     async def get_raw_events(
         self,

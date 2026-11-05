@@ -49,7 +49,17 @@ def normalize_contract(document: dict) -> dict:
     return result
 
 
-def assert_compatible(before: dict, after: dict) -> None:
+def assert_compatible(before: dict, after: dict, *, allow_additions: bool = False) -> None:
+    if allow_additions:
+        import copy
+        after = copy.deepcopy(after)
+        # Only additional endpoints/methods and component definitions are allowed.
+        # Existing schemas/requirements/responses/security remain exact contracts.
+        after['paths'] = {path: {key: after.get('paths', {}).get(path, {}).get(key)
+                                for key in value} for path, value in before.get('paths', {}).items()}
+        after['components'] = {section: {name: after.get('components', {}).get(section, {}).get(name)
+                                        for name in definitions}
+                               for section, definitions in before.get('components', {}).items()}
     if json.dumps(normalize_contract(before), sort_keys=True) != json.dumps(normalize_contract(after), sort_keys=True):
         raise ValueError("Public OpenAPI contract differs: review paths, inputs, security and responses")
 
@@ -64,6 +74,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="origin/master")
     parser.add_argument("--snapshot", type=Path, help="Also compare with a versioned baseline (read only)")
+    parser.add_argument("--allow-additions", action="store_true", help="Permit new operations/models, never modifications to existing contracts")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     with tempfile.TemporaryDirectory(prefix="vytal-contract-") as temp:
@@ -77,9 +88,9 @@ def main() -> None:
         config.write_text(f"cloud:\n  provider: local\nlocal:\n  data_dir: {work}\n  db_path: {work}/test.db\n")
         before, after = contract(work / "backend", config), contract(root / "backend", config)
         try:
-            assert_compatible(before, after)
+            assert_compatible(before, after, allow_additions=args.allow_additions)
             if args.snapshot:
-                assert_compatible(json.loads(args.snapshot.read_text()), after)
+                assert_compatible(json.loads(args.snapshot.read_text()), after, allow_additions=args.allow_additions)
         except ValueError as error:
             raise SystemExit(str(error)) from None
     print("Public OpenAPI compatible: paths, inputs, security and responses preserved")
