@@ -28,6 +28,14 @@ jobs:
           ENVIRONMENT: test
           GOOGLE_CLIENT_ID: synthetic-ci
           GOOGLE_CLIENT_SECRET: synthetic-ci
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: false
+      - name: Terraform syntax and format only (no init or provider calls)
+        run: terraform fmt -check -recursive infrastructure/terraform
+      - name: Offline readiness evidence (not deployment approval)
+        run: python backend/scripts/readiness_audit.py > backend/readiness-report.json
       - name: Public v1 OpenAPI compatibility
         run: python backend/scripts/check_v1_contract.py --base origin/master
       - name: Lint authentication Python files
@@ -39,7 +47,8 @@ jobs:
           backend/app/api/v1/readiness.py backend/app/api/v1/modality_readiness.py
           backend/app/api/v1/muscles.py backend/app/api/v1/workouts.py
           backend/app/api/v1/wellness_feedback.py backend/tests/api backend/tests/unit/auth
-          backend/scripts/check_v1_contract.py
+          backend/scripts/check_v1_contract.py backend/scripts/readiness_audit.py
+          backend/tests/unit/readiness backend/app/repositories/token_repo.py
           backend/app/adapters/cloud/base.py backend/app/adapters/cloud/local.py
           backend/app/adapters/cloud/gcp.py backend/app/repositories/refresh_token_repo.py
           backend/app/services/auth_service.py
@@ -51,7 +60,9 @@ jobs:
         if: always()
         with:
           name: backend-regression-results
-          path: backend/test-results.xml
+          path: |
+            backend/test-results.xml
+            backend/readiness-report.json
 
   android-regression:
     runs-on: ubuntu-latest

@@ -51,7 +51,7 @@ class BigQueryWarehouseProvider(WarehouseProvider):
         table_ref = f"{self.project}.{self.dataset}.{table}"
         errors = self.client.insert_rows_json(table_ref, rows)
         if errors:
-            raise RuntimeError(f"BigQuery insert errors: {errors}")
+            raise RuntimeError("BigQuery insert failed; provider details omitted")
         return len(rows)
 
     # Match literals/comments before placeholders; quoted text and @@ variables
