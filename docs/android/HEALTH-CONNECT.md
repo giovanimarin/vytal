@@ -113,7 +113,7 @@ Compilação alternativa sem dispositivo: `cd android && ./gradlew :app:assemble
 
 ## Testes automatizados e evidências locais
 
-- Backend: **445 passed**, 84,13% de cobertura; baseline anterior 418 preservado, 27 casos adicionais. Normalização/unidades, aliases Garmin/Fit, preferência sobre Fit legado, atualização/exclusão por instalação/conta, rollback, concorrência SQLite, timestamps, reimportação sem invalidar resultado e API com JWT real.
+- Backend: **445 passed**, 84,24% de cobertura; baseline anterior 418 preservado, 27 casos adicionais. Normalização/unidades, aliases Garmin/Fit, preferência sobre Fit legado, atualização/exclusão por instalação/conta, rollback, concorrência SQLite, timestamps, reimportação sem invalidar resultado e API com JWT real.
 - Android JS: **73 passed** (52 anteriores + 21 HC), mais **1 integração Android client→FastAPI/JWT/SQLite**, ampliada para HC/replay e conta B sem dados de A. Reader nativo é simulado apenas nessa automação; backend/normalização/persistência são reais.
 - TypeScript, ESLint, Ruff e export **Hermes 2.94 MB** passaram. Prebuild gerou Manifest de leitura, queries, alias Android 14 e activity de rationale; `tests/health-connect-manifest.cjs` verifica a saída real. Isso **não é** instalação nem teste do SDK no telefone.
 - Novos endpoints/modelos são aditivos. Verificador OpenAPI permite explicitamente adições, mantendo schemas, required/nullable/status/security anteriores exatos; teste prova que modificar contrato antigo continua falhando. Snapshot atualizado somente com as adições. Estrutura das 16 tabelas permaneceu igual.
