@@ -1,0 +1,9 @@
+{
+  "body": {
+    "access_token": "<redacted>",
+    "refresh_token": "<redacted>",
+    "token_type": "bearer"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

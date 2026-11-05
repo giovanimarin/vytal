@@ -1,0 +1,7 @@
+{
+  "body": {
+    "detail": "Refresh token inválido ou expirado"
+  },
+  "provider_calls": 0,
+  "status": 401
+}

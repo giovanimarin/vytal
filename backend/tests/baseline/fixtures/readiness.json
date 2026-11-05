@@ -1,0 +1,17 @@
+{
+  "body": {
+    "activity_score_contribution": 70.0,
+    "calculated_at": "2026-01-15T12:00:00+00:00",
+    "date": "2026-01-15",
+    "hr_score_contribution": 90.0,
+    "insight_text": "Ótimo dia para treino intenso. Seu corpo está recuperado.",
+    "readiness_category": "intense",
+    "readiness_id": "00000000-0000-0000-0000-00000000000c",
+    "readiness_score": 86.7,
+    "sleep_score_contribution": 92.5,
+    "stress_score_contribution": null,
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

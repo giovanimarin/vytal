@@ -1,0 +1,26 @@
+{
+  "body": {
+    "date": "2026-01-15",
+    "recovery_curve": {
+      "available": false,
+      "avg_recovery_days": null,
+      "interpretation": "Dados insuficientes — continue usando o app para calibrar"
+    },
+    "signal_quality": {
+      "flag": "reliable",
+      "interpretation": "Dados do dia com boa qualidade",
+      "issues": [
+        "Fases do sono não detectadas"
+      ],
+      "score": 80
+    },
+    "social_jetlag": {
+      "available": false,
+      "interpretation": "Dados insuficientes para calcular o jetlag social",
+      "score": null
+    },
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

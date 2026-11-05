@@ -1,0 +1,12 @@
+{
+  "body": {
+    "access_token": "<redacted>",
+    "email": "C@example.invalid",
+    "name": "C",
+    "refresh_token": "<redacted>",
+    "token_type": "bearer",
+    "user_id": "00000000-0000-0000-0000-000000000007"
+  },
+  "provider_calls": 0,
+  "status": 201
+}

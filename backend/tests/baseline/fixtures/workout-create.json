@@ -1,0 +1,28 @@
+{
+  "body": {
+    "created_at": "2026-01-15T12:00:00+00:00",
+    "date": "2026-01-15",
+    "duration_min": 30,
+    "exercises": [
+      {
+        "exercise_id": "00000000-0000-0000-0000-000000000008",
+        "muscle_groups": [
+          "chest",
+          "front_shoulders",
+          "triceps"
+        ],
+        "name": "Supino reto",
+        "reps": null,
+        "sets": 3,
+        "workout_id": "00000000-0000-0000-0000-000000000007"
+      }
+    ],
+    "intensity": "moderado",
+    "modality": "academia",
+    "notes": null,
+    "user_id": "00000000-0000-0000-0000-000000000001",
+    "workout_id": "00000000-0000-0000-0000-000000000007"
+  },
+  "provider_calls": 0,
+  "status": 201
+}

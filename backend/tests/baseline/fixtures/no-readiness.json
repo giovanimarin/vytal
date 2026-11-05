@@ -1,0 +1,7 @@
+{
+  "body": {
+    "detail": "Insufficient data to calculate readiness. Sync health data first."
+  },
+  "provider_calls": 0,
+  "status": 422
+}
