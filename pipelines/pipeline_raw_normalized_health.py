@@ -13,17 +13,18 @@ Uso:
 import argparse
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-
-from app.adapters.cloud.factory import get_warehouse, get_pipeline, init_warehouse
+from app.adapters.cloud.factory import get_pipeline, get_warehouse, init_warehouse
+from app.config.safe_logging import log_discarded_event
 from app.domain.health_metrics.base import HealthMetric
-from pipelines.transforms.sanitize import ParseRawEvent, NormalizeMetric
+
+from pipelines.transforms.sanitize import NormalizeMetric, ParseRawEvent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -79,8 +80,8 @@ def run(user_id: str, start_date: str, end_date: str):
         normalized | "PersistNormalized" >> beam.ParDo(PersistNormalized())
 
         # Dead letters — log para investigação
-        dead_parse    | "LogDeadParse"    >> beam.Map(lambda x: logger.warning("Dead letter (parse): %s", x))
-        dead_normalize | "LogDeadNorm"    >> beam.Map(lambda x: logger.warning("Dead letter (normalize): %s", x))
+        dead_parse    | "LogDeadParse"    >> beam.Map(lambda x: log_discarded_event(x, "parse"))
+        dead_normalize | "LogDeadNorm"    >> beam.Map(lambda x: log_discarded_event(x, "normalize"))
 
     logger.info("Pipeline completed.")
 

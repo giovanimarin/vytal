@@ -20,7 +20,7 @@ def api(tmp_path_factory):
     root = tmp_path_factory.mktemp('account-isolation')
     config = root / 'config.yaml'
     config.write_text(f'cloud:\n  provider: local\nlocal:\n  data_dir: {root}\n  db_path: {root}/test.db\n')
-    env = dict(os.environ, CONFIG_PATH=str(config), ENVIRONMENT='local',
+    env = dict(os.environ, CONFIG_PATH=str(config), ENVIRONMENT='test',
                GOOGLE_CLIENT_ID='synthetic', GOOGLE_CLIENT_SECRET='synthetic',
                SECRET_KEY=secrets.token_hex(32), JWT_SECRET_KEY=secrets.token_hex(32),
                PYTHONPATH=str(Path(__file__).resolve().parents[2]))

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 def contract(backend: Path, config: Path) -> dict:
-    env = dict(os.environ, CONFIG_PATH=str(config), ENVIRONMENT="local",
+    env = dict(os.environ, CONFIG_PATH=str(config), ENVIRONMENT="test",
                GOOGLE_CLIENT_ID="synthetic-contract", GOOGLE_CLIENT_SECRET="synthetic-contract")
     raw = subprocess.check_output(
         [sys.executable, "-c", "import json; from app.main import app; print(json.dumps(app.openapi()))"],

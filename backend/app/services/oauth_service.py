@@ -46,7 +46,7 @@ class OAuthService:
     def _generate_state(self, user_id: str) -> str:
         nonce = secrets.token_hex(16)
         signature = hmac.new(
-            settings.secret_key.encode(),
+            settings.secret_key.get_secret_value().encode(),
             f"{user_id}:{nonce}".encode(),
             hashlib.sha256,
         ).hexdigest()
@@ -60,7 +60,7 @@ class OAuthService:
             raise ValueError("Invalid state format") from None
 
         expected = hmac.new(
-            settings.secret_key.encode(),
+            settings.secret_key.get_secret_value().encode(),
             f"{user_id}:{nonce}".encode(),
             hashlib.sha256,
         ).hexdigest()

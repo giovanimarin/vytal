@@ -5,29 +5,26 @@ de dados mockados realistas para testar todas as funcionalidades via web.
 Disponível apenas em ambiente local/dev (não em produção).
 """
 import random
-import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 
 from fastapi import APIRouter, HTTPException
 
 from app.adapters.cloud.factory import get_warehouse
 from app.config.settings import settings
-from app.services.auth_service import AuthService
-from app.services.readiness_service import ReadinessService
-from app.services.readiness_modality_service import ReadinessModalityService
-from app.services.muscle_recovery_service import MuscleRecoveryService
-from app.services.workout_service import WorkoutService
-from app.repositories.health_data_repo import HealthDataRepository
-from app.domain.health_metrics.sleep import SleepMetric
-from app.domain.health_metrics.heart_rate import HeartRateMetric
 from app.domain.health_metrics.activity import ActivityMetric
-from app.domain.health_metrics.stress import StressMetric
+from app.domain.health_metrics.heart_rate import HeartRateMetric
+from app.domain.health_metrics.sleep import SleepMetric
 from app.domain.health_metrics.steps import StepsMetric
+from app.domain.health_metrics.stress import StressMetric
+from app.repositories.health_data_repo import HealthDataRepository
+from app.services.auth_service import AuthService
+from app.services.muscle_recovery_service import MuscleRecoveryService
+from app.services.readiness_modality_service import ReadinessModalityService
+from app.services.readiness_service import ReadinessService
+from app.services.workout_service import WorkoutService
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 
-DEMO_EMAIL = "demo@vytal.app"
-DEMO_PASSWORD = "demo1234"
 DEMO_NAME = "Demo User"
 
 # Plano semanal: (modality_PT, intensity_PT, intensity_EN, duration_min, exercises[])
@@ -48,30 +45,32 @@ async def seed_demo_data():
     Cria o usuário demo e insere 14 dias de dados mockados.
     Idempotente: limpa dados anteriores do usuário e reinicia.
     """
-    if settings.environment not in ("local", "development", "dev"):
+    if settings.environment not in ("local", "development", "dev", "test", "testing") or not settings.allow_dev_seed:
         raise HTTPException(status_code=403, detail="Seed only available in local/dev environment.")
 
+    demo_email = settings.demo_email
+    demo_password = settings.demo_password.get_secret_value()
     auth = AuthService()
     wh = get_warehouse()
 
     # ── 1. Criar/recuperar usuário demo ──────────────────────────────────────
     import json as _json
     try:
-        auth_data = await auth.register(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME)
+        auth_data = await auth.register(demo_email, demo_password, DEMO_NAME)
         user_id = auth_data["user_id"]
     except HTTPException as e:
         if e.status_code == 409:
-            rows = await wh.query("SELECT user_id FROM users WHERE email = :e", {"e": DEMO_EMAIL})
+            rows = await wh.query("SELECT user_id FROM users WHERE email = :e", {"e": demo_email})
             user_id = rows[0]["user_id"]
         else:
             raise
 
     # Set demo profile defaults
-    from datetime import datetime, timezone as _tz
+    from datetime import datetime
     await wh.query(
         "UPDATE users SET gender = ?, preferred_modalities = ?, updated_at = ? WHERE user_id = ?",
         ["male", _json.dumps(["academia", "corrida", "crossfit", "yoga"]),
-         datetime.now(_tz.utc).isoformat(), user_id],
+         datetime.now(UTC).isoformat(), user_id],
     )
 
     # Limpa dados anteriores desse usuário para seed idempotente
@@ -197,13 +196,13 @@ async def seed_demo_data():
     await recovery_svc.calculate(user_id, today_str)
 
     # ── 4. Retorna credenciais ────────────────────────────────────────────────
-    login_result = await auth.login(DEMO_EMAIL, DEMO_PASSWORD)
+    login_result = await auth.login(demo_email, demo_password)
 
     return {
         "ok": True,
         "user_id": user_id,
-        "email": DEMO_EMAIL,
-        "password": DEMO_PASSWORD,
+        "email": demo_email,
+        "password": demo_password,
         "access_token": login_result["access_token"],
         "refresh_token": login_result["refresh_token"],
         "days_seeded": len(inserted_days),

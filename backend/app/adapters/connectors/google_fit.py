@@ -5,7 +5,7 @@ Uses the dataset:aggregate endpoint for reliable daily summaries.
 """
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from google_auth_oauthlib.flow import Flow
@@ -39,7 +39,7 @@ class GoogleFitAdapter(HealthDataProvider):
         client_config = {
             "web": {
                 "client_id": settings.google_client_id,
-                "client_secret": settings.google_client_secret,
+                "client_secret": settings.google_client_secret.get_secret_value(),
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": _GOOGLE_TOKEN_URL,
                 "redirect_uris": [redirect_uri],
@@ -66,7 +66,7 @@ class GoogleFitAdapter(HealthDataProvider):
                 data={
                     "code": code,
                     "client_id": settings.google_client_id,
-                    "client_secret": settings.google_client_secret,
+                    "client_secret": settings.google_client_secret.get_secret_value(),
                     "redirect_uri": redirect_uri,
                     "grant_type": "authorization_code",
                 },
@@ -74,7 +74,7 @@ class GoogleFitAdapter(HealthDataProvider):
             resp.raise_for_status()
             data = resp.json()
 
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=data.get("expires_in", 3600))
+        expires_at = datetime.now(UTC) + timedelta(seconds=data.get("expires_in", 3600))
         return OAuthToken(
             access_token=data["access_token"],
             refresh_token=data.get("refresh_token"),
@@ -90,14 +90,14 @@ class GoogleFitAdapter(HealthDataProvider):
                 data={
                     "refresh_token": token.refresh_token,
                     "client_id": settings.google_client_id,
-                    "client_secret": settings.google_client_secret,
+                    "client_secret": settings.google_client_secret.get_secret_value(),
                     "grant_type": "refresh_token",
                 },
             )
             resp.raise_for_status()
             data = resp.json()
 
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=data.get("expires_in", 3600))
+        expires_at = datetime.now(UTC) + timedelta(seconds=data.get("expires_in", 3600))
         return OAuthToken(
             access_token=data["access_token"],
             refresh_token=token.refresh_token,
@@ -114,7 +114,7 @@ class GoogleFitAdapter(HealthDataProvider):
         end: datetime,
         metric_types: list[str],
     ) -> list[RawEvent]:
-        if datetime.now(timezone.utc) >= token.expires_at and token.refresh_token:
+        if datetime.now(UTC) >= token.expires_at and token.refresh_token:
             token = await self.refresh_token(token)
 
         pipeline_run = str(uuid.uuid4())
@@ -148,9 +148,9 @@ class GoogleFitAdapter(HealthDataProvider):
                         metric_type=metric_type,
                         raw_payload=day_payload,
                         collected_at=datetime.fromtimestamp(
-                            day_payload["startTimeMillis"] / 1000, tz=timezone.utc
+                            day_payload["startTimeMillis"] / 1000, tz=UTC
                         ),
-                        ingested_at=datetime.now(timezone.utc),
+                        ingested_at=datetime.now(UTC),
                         pipeline_run=pipeline_run,
                     ))
 
@@ -165,9 +165,9 @@ class GoogleFitAdapter(HealthDataProvider):
                     metric_type="sleep",
                     raw_payload=payload,
                     collected_at=datetime.fromtimestamp(
-                        int(payload["startTimeMillis"]) / 1000, tz=timezone.utc
+                        int(payload["startTimeMillis"]) / 1000, tz=UTC
                     ),
-                    ingested_at=datetime.now(timezone.utc),
+                    ingested_at=datetime.now(UTC),
                     pipeline_run=pipeline_run,
                 ))
 
@@ -199,7 +199,7 @@ class GoogleFitAdapter(HealthDataProvider):
                 headers={"Authorization": f"Bearer {token.access_token}"},
             )
             if resp.status_code != 200:
-                logger.warning("Aggregate API error %s: %s", resp.status_code, resp.text)
+                logger.warning("Aggregate API error: status=%s", resp.status_code)
                 return {}
             data = resp.json()
 
@@ -295,8 +295,8 @@ class GoogleFitAdapter(HealthDataProvider):
     ) -> list[dict]:
         """Busca sessões de sono via sessions API."""
         params = {
-            "startTime": datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc).isoformat(),
-            "endTime":   datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc).isoformat(),
+            "startTime": datetime.fromtimestamp(start_ms / 1000, tz=UTC).isoformat(),
+            "endTime":   datetime.fromtimestamp(end_ms / 1000, tz=UTC).isoformat(),
             "activityType": 72,  # 72 = sleep no Google Fit
         }
 
@@ -307,7 +307,7 @@ class GoogleFitAdapter(HealthDataProvider):
                 headers={"Authorization": f"Bearer {token.access_token}"},
             )
             if resp.status_code != 200:
-                logger.warning("Sessions API error %s: %s", resp.status_code, resp.text)
+                logger.warning("Sessions API error: status=%s", resp.status_code)
                 return []
             data = resp.json()
 

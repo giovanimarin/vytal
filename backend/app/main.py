@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from app.adapters.cloud.factory import init_warehouse
 from app.api.v1.router import router as v1_router
 from app.auth.authorization import AccountAccessDenied
+from app.config.security import is_local
+from app.config.settings import settings
 
 
 @asynccontextmanager
@@ -25,7 +27,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ajustar em produção
+    allow_origins=settings.cors_origins or (["*"] if is_local(settings.environment) else []),
     allow_methods=["*"],
     allow_headers=["*"],
 )

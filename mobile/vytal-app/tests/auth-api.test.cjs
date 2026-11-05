@@ -17,7 +17,7 @@ test('real Android auth client + FastAPI/JWT/SQLite: login, registration and A/B
   writeFileSync(configPath, `cloud:\n  provider: local\nlocal:\n  data_dir: ${dir}\n  db_path: ${dir}/api.db\n`)
   const worker = spawn(process.env.VYTAL_PYTHON || 'python3', [path.join(backend, 'tests/api/worker.py')], {
     cwd: backend, stdio: ['pipe', 'pipe', 'inherit'], env: { ...process.env,
-      PYTHONPATH: backend, CONFIG_PATH: configPath, ENVIRONMENT: 'local',
+      PYTHONPATH: backend, CONFIG_PATH: configPath, ENVIRONMENT: 'test',
       GOOGLE_CLIENT_ID: 'synthetic', GOOGLE_CLIENT_SECRET: 'synthetic',
       SECRET_KEY: randomBytes(32).toString('hex'), JWT_SECRET_KEY: randomBytes(32).toString('hex') },
   })

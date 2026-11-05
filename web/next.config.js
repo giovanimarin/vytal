@@ -1,13 +1,9 @@
+const { resolveBackend } = require('./config/security')
+const backend = resolveBackend(process.env)
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+module.exports = {
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:8003/api/:path*',
-      },
-    ]
+    return [{ source: '/api/:path*', destination: `${backend}/api/:path*` }]
   },
 }
-
-module.exports = nextConfig

@@ -1,12 +1,11 @@
 import axios, { InternalAxiosRequestConfig } from 'axios'
 import { getSessionVersion, useAuthStore } from '../store/authStore'
 
+import { resolveApiUrl } from '../../config/security'
 import { createSessionRefresh } from './sessionRefresh'
 
 declare const __DEV__: boolean
-const PROD_URL = 'https://vytal-backend-production-368456539470.us-central1.run.app/api/v1'
-const BASE_URL = typeof window !== 'undefined' ? PROD_URL
-  : __DEV__ ? 'http://192.168.2.59:8002/api/v1' : PROD_URL
+const BASE_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, __DEV__)
 
 export const api = axios.create({
   baseURL: BASE_URL, timeout: 15000, headers: { 'Content-Type': 'application/json' },

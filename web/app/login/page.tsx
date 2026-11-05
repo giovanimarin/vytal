@@ -5,8 +5,8 @@ import { login, seedDemo } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('demo@vytal.app')
-  const [password, setPassword] = useState('demo1234')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [seeding, setSeeding] = useState(false)
@@ -49,6 +49,7 @@ export default function LoginPage() {
           <p className="text-muted text-sm">Health Analytics</p>
         </div>
 
+        {process.env.NODE_ENV === 'development' && (<>
         {/* Demo card */}
         <div className="bg-surface border border-brand/40 rounded-2xl p-5 space-y-3">
           <p className="text-sm font-semibold text-brand">Modo Demo</p>
@@ -70,6 +71,8 @@ export default function LoginPage() {
           <span className="text-xs text-muted">ou entre com sua conta</span>
           <div className="flex-1 h-px bg-border" />
         </div>
+
+        </>)}
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
