@@ -1,0 +1,21 @@
+// Validate the actual Expo-generated native project, not just JS configuration.
+const fs = require('node:fs')
+const path = require('node:path')
+const assert = require('node:assert/strict')
+const root = path.join(__dirname, '..')
+const xml = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8')
+const { READS } = require('../plugins/withHealthConnectLocal')
+for (const type of READS) assert.ok(xml.includes(`android.permission.health.READ_${type}`))
+assert.ok(!xml.includes('android.permission.health.WRITE_'))
+assert.ok(xml.includes('com.google.android.apps.healthdata'))
+assert.ok(xml.includes('.HealthPermissionsActivity'))
+assert.ok(xml.includes('android.permission.START_VIEW_PERMISSION_USAGE'))
+assert.ok(xml.includes('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE'))
+const source = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/vytal/app/HealthPermissionsActivity.kt'), 'utf8')
+assert.ok(source.includes('class HealthPermissionsActivity'))
+// Kotlin ordinary strings must contain an escaped newline, not a literal line break.
+assert.match(source, /text\.text = "Vytal[^\n]*\\nLeitura[^\n]*"/)
+assert.ok(!source.includes('Saúde\nLeitura'))
+assert.ok(!source.includes('HealthConnectClient')) // static rationale exposes no health data
+assert.ok(xml.includes('android:usesCleartextTraffic="' + String(process.env.NODE_ENV === 'development') + '"'))
+console.log('Generated Android Health Connect read-only permissions, rationale and cleartext policy validated')

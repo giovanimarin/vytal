@@ -36,3 +36,10 @@ backend/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Private local runtime and generated native projects
+.local-vytal/
+mobile/vytal-app/android/
+mobile/vytal-app/ios/
+web/.next-dev/
+web/.next-e2e/

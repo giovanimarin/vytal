@@ -1,3 +1,4 @@
+import { HealthConnectPanel } from '../../src/healthConnect/HealthConnectPanel'
 import React, { useState, useEffect } from 'react'
 import {
   View,
@@ -128,6 +129,7 @@ export default function DataSourcesScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {userId && <HealthConnectPanel key={userId} account={userId} />}
       {/* Header */}
       <View style={styles.topBar}>
         <TouchableOpacity

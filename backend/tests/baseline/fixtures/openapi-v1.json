@@ -49,6 +49,106 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HealthRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "ExerciseSession",
+              "Steps",
+              "Distance",
+              "ActiveCaloriesBurned",
+              "TotalCaloriesBurned",
+              "HeartRate",
+              "RestingHeartRate",
+              "SleepSession",
+              "Weight",
+              "Speed",
+              "ElevationGained"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "metadata": {
+            "title": "Metadata",
+            "type": "object"
+          },
+          "native": {
+            "title": "Native",
+            "type": "object"
+          },
+          "origin": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Origin",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "values": {
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "category",
+          "id",
+          "origin",
+          "start",
+          "end",
+          "values",
+          "metadata",
+          "native"
+        ],
+        "title": "HealthRecord",
+        "type": "object"
+      },
+      "ImportBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "deleted": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Deleted",
+            "type": "array"
+          },
+          "installation_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Installation Id",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/HealthRecord"
+            },
+            "maxItems": 200,
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "installation_id"
+        ],
+        "title": "ImportBatch",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -800,6 +900,126 @@
         "summary": "Seed Demo Data",
         "tags": [
           "dev"
+        ]
+      }
+    },
+    "/api/v1/health-connect/records": {
+      "get": {
+        "operationId": "imported_records_api_v1_health_connect_records_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ExerciseSession",
+                    "Steps",
+                    "Distance",
+                    "ActiveCaloriesBurned",
+                    "TotalCaloriesBurned",
+                    "HeartRate",
+                    "RestingHeartRate",
+                    "SleepSession",
+                    "Weight",
+                    "Speed",
+                    "ElevationGained"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 256,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Imported Records",
+        "tags": [
+          "health-connect"
+        ]
+      },
+      "post": {
+        "operationId": "import_records_api_v1_health_connect_records_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Import Records",
+        "tags": [
+          "health-connect"
         ]
       }
     },

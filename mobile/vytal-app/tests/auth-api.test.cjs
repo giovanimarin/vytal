@@ -10,7 +10,7 @@ const { createInterface } = require('node:readline')
 const { AxiosError } = require('axios')
 const { api, login, register, getHealthAuthUrl, state } = require('./support.cjs')
 
-test('real Android auth client + FastAPI/JWT/SQLite: login, registration and A/B isolation', { timeout: 20000 }, async () => {
+test('real Android auth client + FastAPI/JWT/SQLite: login, registration, Health Connect import/replay and A/B isolation', { timeout: 20000 }, async () => {
   const backend = path.resolve(__dirname, '../../../backend')
   const dir = mkdtempSync(path.join(tmpdir(), 'vytal-client-api-'))
   const configPath = path.join(dir, 'config.yaml')
@@ -42,6 +42,22 @@ test('real Android auth client + FastAPI/JWT/SQLite: login, registration and A/B
     }
     await login('A@example.invalid', 'synthetic-password-123')
     assert.equal(state().userId, actors.A.user_id)
+    const { synchronize } = require('../src/healthConnect/sync.ts')
+    let checkpoint = null
+    const native = { metadata: { id: 'synthetic-native-id', dataOrigin: 'com.garmin.android.apps.connectmobile' },
+      startTime: '2026-01-15T12:00:00Z', endTime: '2026-01-15T13:00:00Z', count: 123, recordType: 'Steps' }
+    const sync = {
+      reader: { permissions: async () => ['Steps'], page: async () => ({ records: [native] }),
+        changes: async () => ({ upsertionChanges: [], deletionChanges: [], nextChangesToken: 'synthetic-cursor', hasMore: false, changesTokenExpired: false }) },
+      load: async () => checkpoint, save: async value => { checkpoint = value }, stillOwner: () => state().userId === actors.A.user_id,
+      upload: async (records, deleted) => { await api.post('/health-connect/records', { installation_id: 'synthetic-phone', records, deleted }) },
+    }
+    await synchronize(sync, new Date('2026-01-15T14:00:00Z'))
+    await synchronize(sync, new Date('2026-01-15T14:00:00Z'))
+    const imported = (await api.get('/health-connect/records')).data
+    assert.equal(imported.retained_raw, 1)
+    assert.equal(imported.records[0].origin, native.metadata.dataOrigin)
+    assert.equal((await api.get(`/health-data/${actors.A.user_id}/summary?date=2026-01-15`)).data.steps.total_steps, 123)
     await api.post('/wellness-feedback', { user_id: state().userId, date: '2026-02-01', notes: 'A' })
     assert.equal((await api.get(`/wellness-feedback/${actors.A.user_id}?date=2026-02-01`)).status, 200)
     const consumed = state().refreshToken
@@ -55,6 +71,7 @@ test('real Android auth client + FastAPI/JWT/SQLite: login, registration and A/B
     state().logout()
     await login('B@example.invalid', 'synthetic-password-123')
     assert.equal(state().userId, actors.B.user_id)
+    assert.deepEqual((await api.get('/health-connect/records')).data.records, [])
     assert.ok((await getHealthAuthUrl('google_fit')).state.startsWith(actors.B.user_id + ':'))
     await assert.rejects(api.get(`/wellness-feedback/${actors.A.user_id}?date=2026-02-01`), (e) => e.response.status === 404)
     await assert.rejects(api.post('/wellness-feedback', { user_id: actors.A.user_id, date: '2026-02-01', notes: 'tampered' }),
