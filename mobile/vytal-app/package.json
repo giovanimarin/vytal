@@ -6,7 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "node tests/auth.test.cjs",
+    "typecheck": "tsc --noEmit",
+    "lint:pkg01": "eslint app/login.tsx app/register.tsx app/connect.tsx app/_layout.tsx \"app/(dashboard)/data-sources.tsx\" src/types/auth.ts src/store/authStore.ts src/services/api.ts src/services/auth.ts src/services/queryClient.ts src/hooks/useProfile.ts tests/*.cjs eslint.config.mjs",
+    "build:android": "expo export --platform android",
+    "test:api": "node tests/auth-api.test.cjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.96.2",
@@ -15,8 +20,8 @@
     "expo-dev-client": "~6.0.20",
     "expo-linking": "~7.0.0",
     "expo-router": "~5.0.0",
-    "expo-status-bar": "~3.0.9",
     "expo-secure-store": "~14.0.0",
+    "expo-status-bar": "~3.0.9",
     "expo-web-browser": "~14.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -30,7 +35,9 @@
     "@types/react": "~19.1.0",
     "babel-plugin-react-compiler": "19.0.0-beta-ebf51a3-20250411",
     "babel-preset-expo": "~13.0.0",
-    "typescript": "~5.9.2"
+    "eslint": "9.39.1",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "8.46.3"
   },
   "private": true
 }

@@ -4,6 +4,7 @@ import secrets
 
 from app.adapters.connectors.base import OAuthToken
 from app.adapters.connectors.factory import get_connector
+from app.auth.authorization import authorized_account_id
 from app.config.settings import settings
 from app.repositories.health_data_repo import HealthDataRepository
 from app.repositories.token_repo import TokenRepository
@@ -27,8 +28,11 @@ class OAuthService:
         code: str,
         state: str,
         redirect_uri: str,
+        *,
+        expected_user_id: str,
     ) -> OAuthToken:
-        user_id = self._validate_state(state)
+        state_user_id = self._validate_state(state)
+        user_id = authorized_account_id(expected_user_id, state_user_id)
         connector = get_connector(provider)
 
         token = await connector.exchange_token(code, redirect_uri)
@@ -53,7 +57,7 @@ class OAuthService:
         try:
             user_id, nonce, signature = state.split(":")
         except ValueError:
-            raise ValueError("Invalid state format")
+            raise ValueError("Invalid state format") from None
 
         expected = hmac.new(
             settings.secret_key.encode(),

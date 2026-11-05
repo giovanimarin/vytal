@@ -1,11 +1,12 @@
 from datetime import date as _date
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.services.workout_service import WorkoutService
+from app.auth.authorization import authorized_account_id
+from app.auth.dependencies import AuthenticatedUser, AuthorizedAccountId
 from app.services.muscle_recovery_service import MuscleRecoveryService
+from app.services.workout_service import WorkoutService
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 _workout_service = WorkoutService()
@@ -14,8 +15,8 @@ _recovery_service = MuscleRecoveryService()
 
 class ExerciseIn(BaseModel):
     name: str
-    sets: Optional[int] = None
-    reps: Optional[int] = None
+    sets: int | None = None
+    reps: int | None = None
 
 
 class WorkoutIn(BaseModel):
@@ -23,15 +24,16 @@ class WorkoutIn(BaseModel):
     modality: str = Field(..., description="crossfit|corrida|academia|tenis|pilates|surfe|yoga|ciclismo")
     intensity: str = Field(..., description="leve|moderado|intenso")
     duration_min: int = Field(..., gt=0)
-    date: Optional[str] = None
-    notes: Optional[str] = None
+    date: str | None = None
+    notes: str | None = None
     exercises: list[ExerciseIn] = []
-    free_text: Optional[str] = None
+    free_text: str | None = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def register_workout(body: WorkoutIn):
+async def register_workout(body: WorkoutIn, current_user: AuthenticatedUser):
     """Registra um treino e atualiza o estado de recuperação muscular."""
+    account_id = authorized_account_id(current_user["user_id"], body.user_id)
     valid_modalities = {"crossfit", "corrida", "academia", "tenis", "pilates", "surfe", "yoga", "ciclismo"}
     valid_intensities = {"leve", "moderado", "intenso"}
 
@@ -41,20 +43,21 @@ async def register_workout(body: WorkoutIn):
         raise HTTPException(status_code=400, detail=f"Intensidade inválida: {body.intensity}")
 
     payload = body.model_dump()
+    payload["user_id"] = account_id
     exercises_raw = [e.model_dump() for e in body.exercises]
     payload["exercises"] = exercises_raw
 
-    workout = await _workout_service.register(body.user_id, payload)
+    workout = await _workout_service.register(account_id, payload)
 
     # Recalcula recuperação muscular após novo treino
     workout_date = body.date or str(_date.today())
-    await _recovery_service.calculate(body.user_id, workout_date)
+    await _recovery_service.calculate(account_id, workout_date)
 
     return workout
 
 
 @router.get("/{user_id}")
-async def get_workout_history(user_id: str, start_date: str, end_date: str):
+async def get_workout_history(user_id: AuthorizedAccountId, start_date: str, end_date: str):
     """Histórico de treinos no período."""
     return await _workout_service.get_history(user_id, start_date, end_date)
 

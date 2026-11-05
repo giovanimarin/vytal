@@ -1,116 +1,118 @@
 import create from 'zustand'
 import * as SecureStore from 'expo-secure-store'
-
-export interface UserProfile {
-  user_id: string
-  email: string
-  name: string
-  birth_date: string | null
-  weight_kg: number | null
-  height_cm: number | null
-  goal: string | null
-}
+import { AuthSession, UserProfile, profileFromResponse } from '../types/auth'
+export type { UserProfile } from '../types/auth'
 
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   userProfile: UserProfile | null
   isAuthenticated: boolean
-  // computed compat
   userId: string | null
-  isConnected: boolean // keep for backward compat with existing code
-  // actions
+  isConnected: boolean
+  setSession: (session: AuthSession) => Promise<void>
   setTokens: (access: string, refresh: string) => void
   setProfile: (profile: UserProfile) => void
   logout: () => void
-  // old compat actions (used by connect.tsx and other screens)
-  setUserId: (id: string) => void
-  setConnected: (value: boolean) => void
   reset: () => void
-  // init: load tokens from SecureStore on app start
   initFromStorage: () => Promise<void>
 }
 
-const SECURE_KEY_ACCESS = 'vytal_access_token'
-const SECURE_KEY_REFRESH = 'vytal_refresh_token'
-const SECURE_KEY_PROFILE = 'vytal_user_profile'
-
-// Helper: check if we're in a web environment where SecureStore isn't available
+const SESSION_KEY = 'vytal_session'
+const LEGACY_KEYS = ['vytal_access_token', 'vytal_refresh_token', 'vytal_user_profile']
 const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined'
+const secureGet = (key: string) => isWeb
+  ? Promise.resolve(localStorage.getItem(key)) : SecureStore.getItemAsync(key)
+const secureSet = (key: string, value: string) => isWeb
+  ? Promise.resolve(localStorage.setItem(key, value)) : SecureStore.setItemAsync(key, value)
+const secureDelete = (key: string) => isWeb
+  ? Promise.resolve(localStorage.removeItem(key)) : SecureStore.deleteItemAsync(key)
 
-async function secureGet(key: string): Promise<string | null> {
-  if (isWeb) return localStorage.getItem(key)
-  return SecureStore.getItemAsync(key)
+// Serialize writes so a slow login/refresh cannot restore storage after logout.
+let pendingWrite: Promise<void> = Promise.resolve()
+function persist(session: AuthSession | null): Promise<void> {
+  const operation = pendingWrite.then(async () => {
+    if (session) await secureSet(SESSION_KEY, JSON.stringify(session))
+    else await secureDelete(SESSION_KEY)
+    await Promise.all(LEGACY_KEYS.map(secureDelete))
+  })
+  pendingWrite = operation.catch(() => {
+    console.warn('Não foi possível atualizar o armazenamento seguro da sessão.')
+  })
+  return operation
 }
 
-async function secureSet(key: string, value: string): Promise<void> {
-  if (isWeb) {
-    localStorage.setItem(key, value)
-    return
-  }
-  return SecureStore.setItemAsync(key, value)
+const signedOut = {
+  accessToken: null, refreshToken: null, userProfile: null,
+  userId: null, isAuthenticated: false, isConnected: false,
 }
-
-async function secureDelete(key: string): Promise<void> {
-  if (isWeb) {
-    localStorage.removeItem(key)
-    return
-  }
-  return SecureStore.deleteItemAsync(key)
-}
+let generation = 0
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  accessToken: null,
-  refreshToken: null,
-  userProfile: null,
-  isAuthenticated: false,
-  userId: null,
-  isConnected: false,
+  ...signedOut,
 
-  setTokens: (access, refresh) => {
-    set({ accessToken: access, refreshToken: refresh, isAuthenticated: true, isConnected: true })
-    secureSet(SECURE_KEY_ACCESS, access)
-    secureSet(SECURE_KEY_REFRESH, refresh)
+  setSession: async (session) => {
+    const profile = profileFromResponse(session.userProfile)
+    if (!session.accessToken?.trim() || !session.refreshToken?.trim()) throw new Error('Sessão inválida.')
+    const version = ++generation
+    try {
+      await persist({ ...session, userProfile: profile })
+    } catch (error) {
+      if (version === generation) get().logout()
+      throw error
+    }
+    if (version !== generation) throw new Error('A sessão mudou. Entre novamente.')
+    // Publish identity and credentials together; never retain the previous profile.
+    set({ ...session, userProfile: profile, userId: profile.user_id,
+      isAuthenticated: true, isConnected: true })
   },
 
-  setProfile: (profile) => {
-    set({ userProfile: profile, userId: profile.user_id })
-    secureSet(SECURE_KEY_PROFILE, JSON.stringify(profile))
+  setTokens: (access, refresh) => {
+    if (!access?.trim() || !refresh?.trim()) throw new Error('Sessão inválida.')
+    set({ accessToken: access, refreshToken: refresh })
+    const profile = get().userProfile
+    if (profile) void persist({ accessToken: access, refreshToken: refresh, userProfile: profile }).catch(() => {})
+  },
+
+  setProfile: (value) => {
+    const profile = profileFromResponse(value)
+    const state = get()
+    if (!state.isAuthenticated || profile.user_id !== state.userId) throw new Error('A sessão mudou.')
+    set({ userProfile: profile })
+    void persist({ accessToken: state.accessToken!, refreshToken: state.refreshToken!,
+      userProfile: profile }).catch(() => {})
   },
 
   logout: () => {
-    set({
-      accessToken: null,
-      refreshToken: null,
-      userProfile: null,
-      isAuthenticated: false,
-      isConnected: false,
-      userId: null,
-    })
-    secureDelete(SECURE_KEY_ACCESS)
-    secureDelete(SECURE_KEY_REFRESH)
-    secureDelete(SECURE_KEY_PROFILE)
+    ++generation
+    set(signedOut)
+    void persist(null).catch(() => {})
   },
-
-  // Backward compat stubs
-  setUserId: (id) => set({ userId: id }),
-  setConnected: (value) => set({ isConnected: value, isAuthenticated: value }),
   reset: () => get().logout(),
 
   initFromStorage: async () => {
-    const access = await secureGet(SECURE_KEY_ACCESS)
-    const refresh = await secureGet(SECURE_KEY_REFRESH)
-    const profileStr = await secureGet(SECURE_KEY_PROFILE)
-    if (access && refresh) {
-      const profile = profileStr ? JSON.parse(profileStr) : null
-      set({
-        accessToken: access,
-        refreshToken: refresh,
-        userProfile: profile,
-        userId: profile?.user_id ?? null,
-        isAuthenticated: true,
-        isConnected: true,
-      })
+    const version = generation
+    try {
+      const stored = await secureGet(SESSION_KEY)
+      // Legacy profile is deliberately ignored: backend /me establishes ownership.
+      const session = stored ? JSON.parse(stored) : {
+        accessToken: await secureGet(LEGACY_KEYS[0]),
+        refreshToken: await secureGet(LEGACY_KEYS[1]),
+      }
+      if (version !== generation) return
+      if (typeof session?.accessToken !== 'string' || !session.accessToken.trim()
+          || typeof session?.refreshToken !== 'string' || !session.refreshToken.trim()) {
+        get().logout()
+        return
+      }
+      set({ ...signedOut, accessToken: session.accessToken, refreshToken: session.refreshToken })
+      const { api } = await import('../services/api')
+      const { data } = await api.get('/users/me')
+      if (version !== generation) return
+      await get().setSession({ accessToken: get().accessToken!, refreshToken: get().refreshToken!,
+        userProfile: profileFromResponse(data) })
+    } catch {
+      if (version === generation) get().logout()
     }
   },
 }))

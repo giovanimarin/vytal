@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert,
+  ActivityIndicator,
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import { api } from '../src/services/api'
-import { useAuthStore } from '../src/store/authStore'
+import { getHealthAuthUrl, authErrorMessage } from '../src/services/auth'
 
-// ID de usuário fixo para o MVP (sem auth de usuário ainda)
-const MVP_USER_ID = 'user-mvp-1'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -19,7 +17,6 @@ export default function ConnectScreen() {
   const [state, setState] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const router = useRouter()
-  const { setUserId, setConnected } = useAuthStore()
 
   // Escuta o deep link de retorno do OAuth
   useEffect(() => {
@@ -31,18 +28,11 @@ export default function ConnectScreen() {
     setLoading(true)
     setErrorMsg(null)
     try {
-      const { data } = await api.get('/connect/google_fit/auth-url', {
-        params: { user_id: MVP_USER_ID },
-      })
+      const data = await getHealthAuthUrl('google_fit')
       setState(data.state)
-      // Abre em popup/nova aba — não substitui a tela atual
-      const popup = window.open(data.auth_url, '_blank', 'width=500,height=700')
-      if (!popup) {
-        // Fallback se popup bloqueado
-        window.location.href = data.auth_url
-      }
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+      await WebBrowser.openBrowserAsync(data.auth_url)
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Não foi possível iniciar a conexão: ${msg}`)
     } finally {
       setLoading(false)
@@ -64,11 +54,9 @@ export default function ConnectScreen() {
         state,
         redirect_uri: redirectUri,
       })
-      setUserId(MVP_USER_ID)
-      setConnected(true)
       router.replace('/(dashboard)')
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Falha ao completar a conexão: ${msg}`)
     } finally {
       setLoading(false)
@@ -111,16 +99,7 @@ export default function ConnectScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={styles.devButton}
-          onPress={() => {
-            setUserId(MVP_USER_ID)
-            setConnected(true)
-            router.replace('/(dashboard)')
-          }}
-        >
-          <Text style={styles.devButtonText}>Modo de teste (dados simulados)</Text>
-        </TouchableOpacity>
+
 
         <Text style={styles.disclaimer}>
           Seus dados ficam no seu dispositivo e nunca são compartilhados.
