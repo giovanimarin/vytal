@@ -44,6 +44,15 @@ test('real Android auth client + FastAPI/JWT/SQLite: login, registration and A/B
     assert.equal(state().userId, actors.A.user_id)
     await api.post('/wellness-feedback', { user_id: state().userId, date: '2026-02-01', notes: 'A' })
     assert.equal((await api.get(`/wellness-feedback/${actors.A.user_id}?date=2026-02-01`)).status, 200)
+    const consumed = state().refreshToken
+    state().setTokens('invalid-access-for-recovery', consumed)
+    const recovered = await Promise.all([api.get('/users/me'), api.get('/users/me')])
+    assert.ok(recovered.every((r) => r.data.user_id === actors.A.user_id))
+    await assert.rejects(api.post('/auth/refresh', { refresh_token: consumed }), (e) => e.response.status === 401)
+    const current = state().refreshToken
+    await api.post('/auth/logout', { refresh_token: current })
+    await assert.rejects(api.post('/auth/refresh', { refresh_token: current }), (e) => e.response.status === 401)
+    state().logout()
     await login('B@example.invalid', 'synthetic-password-123')
     assert.equal(state().userId, actors.B.user_id)
     assert.ok((await getHealthAuthUrl('google_fit')).state.startsWith(actors.B.user_id + ':'))

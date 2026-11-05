@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { logout } from '@/lib/auth'
 import { useAuthStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
@@ -15,7 +16,7 @@ const NAV = [
 ]
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { userId, email, name, clear } = useAuthStore()
+  const { userId, email, name } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -65,7 +66,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted truncate">{email}</p>
             </div>
             <button
-              onClick={() => { clear(); router.replace('/login') }}
+              onClick={() => { logout(); router.replace('/login') }}
               className="text-muted hover:text-text text-xs"
               title="Sair"
             >

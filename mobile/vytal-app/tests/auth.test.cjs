@@ -269,3 +269,104 @@ test('an empty display name permitted by v1 does not prevent legitimate login', 
   assert.equal(state().userId, 'account-A')
   assert.equal(state().userProfile.name, '')
 })
+
+test('a second 401 after one refresh clears the session', async () => {
+  await seed('A')
+  let renewals = 0
+  api.defaults.adapter = async (config) => {
+    if (config.url === '/auth/refresh') {
+      renewals++
+      return ok(config, { access_token: 'renewed-A', refresh_token: 'renewed-refresh-A' })
+    }
+    return unauthorized(config)
+  }
+  await assert.rejects(api.get('/users/me'))
+  assert.equal(renewals, 1)
+  assert.equal(state().isAuthenticated, false)
+})
+
+test('401 without refresh credentials clears an unusable session', async () => {
+  await seed('A')
+  useAuthStore.setState({ refreshToken: null })
+  api.defaults.adapter = async (config) => unauthorized(config)
+  await assert.rejects(api.get('/users/me'))
+  assert.equal(state().isAuthenticated, false)
+})
+
+test('logout and login of the same account must still reject an old response', async () => {
+  await seed('A')
+  const arrived = deferred(), release = deferred()
+  api.defaults.adapter = async (config) => {
+    arrived.resolve(); await release.promise
+    return ok(config, { user_id: 'account-A' })
+  }
+  const pending = api.get('/users/me')
+  await arrived.promise
+  state().logout()
+  await seed('A')
+  release.resolve()
+  await assert.rejects(pending, /sessão mudou/)
+})
+
+for (const failure of ['network', '500', 'malformed']) {
+  test(`refresh ${failure} rejects concurrent requests once and clears credentials`, async () => {
+    const { AxiosError } = require('axios')
+    await seed('A'); let renewals = 0
+    api.defaults.adapter = async (config) => {
+      if (config.url !== '/auth/refresh') return unauthorized(config)
+      renewals++
+      if (failure === 'network') throw new AxiosError('Synthetic network failure', 'ERR_NETWORK', config)
+      if (failure === '500') throw new AxiosError('Synthetic failure', 'ERR_BAD_RESPONSE', config, null,
+        { status: 500, data: {}, headers: {}, config })
+      return ok(config, { access_token: '', refresh_token: null })
+    }
+    const results = await Promise.allSettled([api.get('/users/me'), api.get('/users/me')])
+    assert.ok(results.every((result) => result.status === 'rejected'))
+    assert.equal(renewals, 1); assert.equal(state().isAuthenticated, false)
+  })
+}
+
+test('ordinary request network failure preserves session and never refreshes', async () => {
+  await seed('A'); let calls = 0
+  api.defaults.adapter = async () => { calls++; throw new Error('Synthetic network failure') }
+  await assert.rejects(api.get('/users/me'))
+  assert.equal(calls, 1); assert.equal(state().userId, 'account-A')
+})
+
+test('explicit logout drops identity before revocation and tolerates offline transport', async () => {
+  const { logout } = require('../src/services/auth.ts')
+  await seed('A'); let raw
+  api.defaults.adapter = async (config) => {
+    assert.equal(config.url, '/auth/logout'); raw = JSON.parse(config.data).refresh_token
+    assert.equal(state().userId, null)
+    throw new Error('Synthetic network failure')
+  }
+  logout(); await flush()
+  assert.equal(raw, 'refresh-A'); assert.equal(state().refreshToken, null)
+})
+
+test('session refresh coordinator shares failure and permits a later independent attempt', async () => {
+  const { createSessionRefresh } = require('../src/services/sessionRefresh.ts')
+  const renew = createSessionRefresh()
+  let count = 0
+  const action = async () => { count++; throw new Error('Synthetic renewal failure') }
+  const first = renew('session-A', action), second = renew('session-A', action)
+  assert.equal(first, second)
+  await Promise.all([assert.rejects(first), assert.rejects(second)])
+  assert.equal(count, 1)
+  await assert.rejects(renew('session-B', action))
+  assert.equal(count, 2)
+})
+
+test('queued renewal cannot send an old refresh after logout', async () => {
+  const { refreshSession } = require('../src/services/api.ts')
+  await seed('A'); let sent = 0
+  api.defaults.adapter = async (config) => {
+    sent++; return ok(config, { access_token: 'old-access', refresh_token: 'old-refresh' })
+  }
+  const pending = refreshSession()
+  const rejected = assert.rejects(pending, /sessão mudou/)
+  state().logout()
+  await rejected
+  assert.equal(sent, 0)
+})

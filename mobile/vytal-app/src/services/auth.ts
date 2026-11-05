@@ -30,3 +30,9 @@ export function authErrorMessage(error: unknown): string {
   }
   return error instanceof Error ? error.message : 'Erro desconhecido'
 }
+
+export function logout() {
+  const refresh = useAuthStore.getState().refreshToken
+  useAuthStore.getState().logout()
+  if (refresh) void api.post('/auth/logout', { refresh_token: refresh }).catch(() => {})
+}

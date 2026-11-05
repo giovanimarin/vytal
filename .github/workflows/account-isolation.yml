@@ -3,7 +3,7 @@ name: Account isolation regression
 on:
   pull_request:
   push:
-    branches: [fix/pkg-01-account-isolation-clean, master]
+    branches: [fix/pkg-01-account-isolation-clean, fix/pkg-02-session-refresh, master]
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: synthetic-ci
       - name: Public v1 OpenAPI compatibility
         run: python backend/scripts/check_v1_contract.py --base origin/master
-      - name: Lint PKG-01 Python files
+      - name: Lint authentication Python files
         run: >-
           ruff check --select E4,E7,E9,F,I,UP,B,SIM,C4,RUF,BLE
           backend/app/auth/authorization.py backend/app/auth/dependencies.py
@@ -40,6 +40,9 @@ jobs:
           backend/app/api/v1/muscles.py backend/app/api/v1/workouts.py
           backend/app/api/v1/wellness_feedback.py backend/tests/api backend/tests/unit/auth
           backend/scripts/check_v1_contract.py
+          backend/app/adapters/cloud/base.py backend/app/adapters/cloud/local.py
+          backend/app/adapters/cloud/gcp.py backend/app/repositories/refresh_token_repo.py
+          backend/app/services/auth_service.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -90,6 +93,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - run: npm test
+      - run: node --check tests/auth.test.cjs
       - run: npx tsc --noEmit --incremental false
       - run: npm run build
         env:

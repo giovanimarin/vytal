@@ -4,11 +4,18 @@ StorageProvider → filesystem local
 WarehouseProvider → SQLite (via aiosqlite)
 PipelineProvider → DirectRunner
 """
+from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from pathlib import Path
 
 import aiosqlite
 
-from app.adapters.cloud.base import StorageProvider, WarehouseProvider, PipelineProvider
+from app.adapters.cloud.base import (
+    PipelineProvider,
+    QueryParameter,
+    StorageProvider,
+    WarehouseProvider,
+)
 from app.config.cloud_config import LocalConfig
 
 # DDL das tabelas do warehouse local (espelha o modelo de dados)
@@ -210,7 +217,7 @@ class LocalStorageProvider(StorageProvider):
         self.base = Path(config.data_dir)
         self.base.mkdir(parents=True, exist_ok=True)
 
-    async def upload(self, path: str, data: bytes, content_type: str = None) -> str:
+    async def upload(self, path: str, data: bytes, content_type: str | None = None) -> str:
         full = self.base / path
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_bytes(data)
@@ -246,24 +253,38 @@ class LocalWarehouseProvider(WarehouseProvider):
             await db.commit()
             return len(rows)
 
+    @staticmethod
+    def _bound_values(params):
+        def adapt(value):
+            if isinstance(value, QueryParameter):
+                value = value.value
+            if isinstance(value, datetime):
+                if value.utcoffset() is not None:
+                    value = value.astimezone(UTC)
+                return value.isoformat()
+            if isinstance(value, (date, time)):
+                return value.isoformat()
+            if isinstance(value, Decimal):
+                return str(value)
+            return value
+
+        if isinstance(params, dict):
+            return {key: adapt(value) for key, value in params.items()}
+        return [adapt(value) for value in params]
+
     async def query(self, sql: str, params=None) -> list[dict]:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            if params is None:
-                cursor = await db.execute(sql)
-            elif isinstance(params, dict):
-                # Converte :param para ? e lista de valores
-                import re
-                keys = re.findall(r":(\w+)", sql)
-                sql = re.sub(r":\w+", "?", sql)
-                values = [params[k] for k in keys]
-                cursor = await db.execute(sql, values)
-            else:
-                # Lista posicional com placeholders ?
-                cursor = await db.execute(sql, params)
+            cursor = await db.execute(sql, self._bound_values(params) if params is not None else ())
             rows = await cursor.fetchall()
             await db.commit()
             return [dict(row) for row in rows]
+
+    async def execute_affected(self, sql: str, params: dict | list | tuple) -> int:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(sql, self._bound_values(params))
+            await db.commit()
+            return cursor.rowcount
 
 
 class LocalPipelineProvider(PipelineProvider):

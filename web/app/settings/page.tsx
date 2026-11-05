@@ -17,11 +17,12 @@ const MODALITIES = [
 ]
 
 export default function SettingsPage() {
-  const { setProfile } = useAuthStore()
+  const { setProfile, userId } = useAuthStore()
   const qc = useQueryClient()
 
   const { data: profile } = useQuery({
-    queryKey: ['profile-me'],
+    queryKey: ['profile-me', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get('/users/me')
       return data
