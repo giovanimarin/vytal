@@ -219,3 +219,19 @@ test('storage failures cannot prevent clearing the in-memory authenticated sessi
     localStorage.setItem = originalSet; localStorage.removeItem = originalRemove
   }
 })
+
+test('web registration sends name and establishes the authenticated account from v1', async () => {
+  const { register } = require('../lib/auth.ts')
+  api.defaults.adapter = async (config) => {
+    if (config.url === '/auth/register') {
+      assert.equal(config.headers.Authorization, undefined)
+      assert.deepEqual(JSON.parse(config.data), { name: 'Local A', email: 'A@example.invalid', password: 'synthetic' })
+      return ok(config, { user_id: 'account-A', email: 'A@example.invalid', name: 'Local A', access_token: 'access-A', refresh_token: 'refresh-A' })
+    }
+    assert.equal(config.url, '/users/me')
+    assert.equal(config.headers.Authorization, 'Bearer access-A')
+    return ok(config, { gender: null, preferred_modalities: [] })
+  }
+  await register('Local A', 'A@example.invalid', 'synthetic')
+  assert.equal(state().userId, 'account-A')
+})

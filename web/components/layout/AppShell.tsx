@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { logout } from '@/lib/auth'
 import { useAuthStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -19,12 +19,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { userId, email, name } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    if (!userId) router.replace('/login')
-  }, [userId, router])
+    const unsubscribe = useAuthStore.persist.onFinishHydration(() => setHydrated(true))
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true)
+    return unsubscribe
+  }, [])
 
-  if (!userId) return null
+  useEffect(() => {
+    if (hydrated && !userId) router.replace('/login')
+  }, [hydrated, userId, router])
+
+  if (!hydrated || !userId) return null
 
   return (
     <div className="flex h-screen bg-bg overflow-hidden">

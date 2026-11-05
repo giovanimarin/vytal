@@ -1,4 +1,5 @@
 'use client'
+import WellnessFeedback from '@/components/WellnessFeedback'
 import { useQuery } from '@tanstack/react-query'
 import AppShell from '@/components/layout/AppShell'
 import { api } from '@/lib/api'
@@ -91,6 +92,7 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <div className="p-8 space-y-8">
+        <WellnessFeedback />
         {/* Header */}
         <div>
           <h1 className="text-3xl font-black text-text">Daily Readiness</h1>
@@ -106,7 +108,7 @@ export default function DashboardPage() {
         {error && !isLoading && (
           <div className="bg-surface rounded-2xl p-6 text-center space-y-2">
             <p className="text-sub">Sem dados para hoje.</p>
-            <p className="text-xs text-muted">Volte para o login e clique em "Entrar com dados demo".</p>
+            <p className="text-xs text-muted">Sincronize uma fonte conectada ou siga o guia local para gerar dados sintéticos nesta conta.</p>
           </div>
         )}
 

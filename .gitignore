@@ -36,3 +36,10 @@ backend/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local MVP state, private generated signing keys and browser artifacts
+.local-vytal/
+web/test-results/
+web/playwright-report/
+web/.next-dev/
+web/.next-e2e/

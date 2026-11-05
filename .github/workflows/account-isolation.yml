@@ -49,6 +49,7 @@ jobs:
           backend/app/api/v1/wellness_feedback.py backend/tests/api backend/tests/unit/auth
           backend/scripts/check_v1_contract.py backend/scripts/readiness_audit.py
           backend/scripts/sqlite_contract.py backend/tests/baseline backend/tests/unit/contracts
+          backend/scripts/seed_local_account.py backend/tests/unit/local scripts/local.py
           backend/tests/unit/readiness backend/app/repositories/token_repo.py
           backend/app/adapters/cloud/base.py backend/app/adapters/cloud/local.py
           backend/app/adapters/cloud/gcp.py backend/app/repositories/refresh_token_repo.py
@@ -118,3 +119,18 @@ jobs:
         env:
           VYTAL_BACKEND_URL: https://backend.example.invalid
           NEXT_TELEMETRY_DISABLED: '1'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r ../backend/requirements-prod.txt
+      - run: npx playwright install --with-deps chromium
+      - name: Local browser E2E with isolated SQLite (no cloud)
+        run: npm run test:e2e
+        env:
+          VYTAL_PYTHON: python
+          VYTAL_E2E_ARTIFACTS: test-results/local-e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-web-e2e-evidence
+          path: web/test-results/local-e2e
