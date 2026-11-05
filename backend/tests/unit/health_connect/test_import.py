@@ -152,3 +152,11 @@ async def test_repeat_does_not_invalidate_unchanged_readiness_or_normalization(l
     await repository.import_batch('A', 'phone', [native], [])
     assert await warehouse.query('SELECT * FROM normalized_heart_rate') == before
     assert len(await warehouse.query('SELECT * FROM fact_daily_readiness')) == 1
+
+
+async def test_recent_filter_can_find_garmin_without_other_origins_hiding_it(local):
+    _, repository = local
+    await repository.import_batch('A', 'phone', [record(), record('Weight', 'weight-other', FIT, {'value': 70, 'unit': 'kg'})], [])
+    assert len((await repository.recent('A', origin=GARMIN))['records']) == 1
+    assert (await repository.recent('A', category='Weight', origin=GARMIN))['records'] == []
+    assert (await repository.recent('B', origin=GARMIN))['records'] == []

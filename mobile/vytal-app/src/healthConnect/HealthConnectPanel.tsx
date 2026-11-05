@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = { ExerciseSession: 'Exercício', Steps: '
 export function HealthConnectPanel({ account }: { account: string }) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('Não conectado. Requer development build Android, não Expo Go.')
+  const [garminOnly, setGarminOnly] = useState(true)
   const [category, setCategory] = useState<Category | ''>('')
   const [records, setRecords] = useState<ImportedRecord[]>([])
   const query = useQueryClient()
@@ -42,13 +43,13 @@ export function HealthConnectPanel({ account }: { account: string }) {
         },
       })
       if (!stillOwner()) return
-      const { data } = await api.get('/health-connect/records', { headers: {}, ...bound, params: category ? { category } : undefined })
+      const { data } = await api.get('/health-connect/records', { headers: {}, ...bound, params: { ...(category ? { category } : {}), ...(garminOnly ? { origin: 'com.garmin.android.apps.connectmobile' } : {}) } })
       if (!stillOwner()) return
       setRecords(data.records)
       setStatus(report.state === 'denied' ? 'Permissão negada: conceda leitura na Conexão Saúde.'
         : report.state === 'expired' ? 'Histórico incremental expirou. Sincronize novamente para reler a janela disponível.'
         : report.state === 'partial' || warnings.length ? `Importação parcial. Categorias sem acesso/dados válidos: ${[...report.failed, ...warnings].join(', ') || 'verifique permissões'}. Toque novamente para tentar.`
-        : data.displayed === 0 ? 'Sem dados disponíveis. Confirme se Garmin Connect gravou registros na Conexão Saúde.'
+        : data.displayed === 0 ? 'Sem registros para o filtro. Confirme os dados do Garmin na Conexão Saúde ou selecione todas as origens.'
         : `Sincronização concluída. ${data.displayed} registros importados de Health Connect exibidos (até 200 recentes).`)
       await query.invalidateQueries()
     } catch {
@@ -61,11 +62,12 @@ export function HealthConnectPanel({ account }: { account: string }) {
     catch { setStatus('Não foi possível reiniciar a sincronização local.'); return }
     await sync(false)
   }
-  async function filter(next: Category | '') {
+  async function filter(next: Category | '', onlyGarmin = garminOnly) {
     setCategory(next)
+    setGarminOnly(onlyGarmin)
     const version = getSessionVersion()
     try {
-      const { data } = await api.get('/health-connect/records', { headers: {}, _sessionVersion: version, _accountId: account, params: next ? { category: next } : undefined } as Parameters<typeof api.get>[1])
+      const { data } = await api.get('/health-connect/records', { headers: {}, _sessionVersion: version, _accountId: account, params: { ...(next ? { category: next } : {}), ...(onlyGarmin ? { origin: 'com.garmin.android.apps.connectmobile' } : {}) } } as Parameters<typeof api.get>[1])
       if (useAuthStore.getState().userId === account && getSessionVersion() === version) setRecords(data.records)
     } catch { setStatus('Não foi possível consultar os registros locais.') }
   }
@@ -78,6 +80,7 @@ export function HealthConnectPanel({ account }: { account: string }) {
       <TouchableOpacity accessibilityRole="button" onPress={rescan} style={styles.button}><Text style={styles.text}>Reler janela inicial (30 dias)</Text></TouchableOpacity>
       <TouchableOpacity accessibilityRole="button" onPress={() => sync(false)} style={styles.button}><Text style={styles.text}>Sincronizar novamente</Text></TouchableOpacity>
     </View>}
+    <TouchableOpacity onPress={() => filter(category, !garminOnly)} style={styles.button}><Text style={styles.text}>{garminOnly ? 'Origem: Garmin Connect · mostrar todas' : 'Todas as origens · mostrar só Garmin'}</Text></TouchableOpacity>
     <ScrollView horizontal><TouchableOpacity onPress={() => filter('')} style={styles.button}><Text style={styles.text}>Todos</Text></TouchableOpacity>
       {RECORD_TYPES.map(type => <TouchableOpacity key={type} onPress={() => filter(type)} style={styles.button}><Text style={styles.text}>{LABELS[type]}</Text></TouchableOpacity>)}
     </ScrollView>

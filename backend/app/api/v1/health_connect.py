@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.auth.dependencies import AuthenticatedUser
 from app.config.cloud_config import get_cloud_config
@@ -27,5 +27,5 @@ async def import_records(body: ImportBatch, current_user: AuthenticatedUser):
 
 
 @router.get('/records')
-async def imported_records(current_user: AuthenticatedUser, category: Category | None = None):
-    return await repository().recent(current_user['user_id'], category)
+async def imported_records(current_user: AuthenticatedUser, category: Category | None = None, origin: str | None = Query(None, max_length=256)):
+    return await repository().recent(current_user['user_id'], category, origin)

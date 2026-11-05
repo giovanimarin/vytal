@@ -78,13 +78,16 @@ class HealthConnectRepository:
             await db.commit()
         return {'accepted': len(records), 'deleted_requested': len(deleted), 'affected_days': sorted(affected), 'source': 'health_connect', 'projection_warnings': warnings}
 
-    async def recent(self, account: str, category: str | None = None):
+    async def recent(self, account: str, category: str | None = None, origin: str | None = None):
         async with aiosqlite.connect(self.db_path) as db:
             sql = "SELECT raw_payload FROM raw_health_events WHERE user_id=? AND provider='health_connect' AND event_id LIKE 'hc:%'"
             params = [account]
             if category:
                 sql += " AND metric_type=?"
                 params.append(category)
+            if origin:
+                sql += " AND json_extract(raw_payload,'$.origin')=?"
+                params.append(origin)
             cursor = await db.execute(sql + " ORDER BY collected_at DESC LIMIT 200", params)
             records = [json.loads(row[0]) for row in await cursor.fetchall()]
         selected = canonical(records)
