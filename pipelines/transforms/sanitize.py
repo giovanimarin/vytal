@@ -5,7 +5,6 @@ import json
 import logging
 
 import apache_beam as beam
-
 from app.domain.health_metrics import METRIC_REGISTRY
 from app.domain.health_metrics.base import RawEvent
 
@@ -28,7 +27,7 @@ class ParseRawEvent(beam.DoFn):
                 pipeline_run=element["pipeline_run"],
             )
         except Exception as e:
-            logger.warning("Failed to parse raw event %s: %s", element.get("event_id"), e)
+            logger.warning("Failed to parse raw event (%s)", type(e).__name__)
             yield beam.pvalue.TaggedOutput("dead_letter", {**element, "error": str(e)})
 
 

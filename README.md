@@ -100,8 +100,12 @@ Edit `.env` with your values:
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/connect/google_fit/callback
-SECRET_KEY=any-random-string
 ```
+
+For local use only, omitted signing keys are generated randomly on startup. Set private
+`SECRET_KEY` and `JWT_SECRET_KEY` values if local sessions must survive restarts.
+Never commit them. `.env` cannot choose the runtime environment; select it explicitly
+in the startup command below.
 
 ### 3. Configure cloud provider
 
@@ -115,11 +119,15 @@ cloud:
 ### 4. Start the API
 
 ```bash
-uvicorn app.main:app --reload
+ENVIRONMENT=local uvicorn app.main:app --reload
 ```
 
 API running at `http://localhost:8000`  
 Interactive docs at `http://localhost:8000/docs`
+
+For tests: `ENVIRONMENT=test GOOGLE_CLIENT_ID=synthetic GOOGLE_CLIENT_SECRET=synthetic pytest`.
+For production requirements, frontend endpoints, demo opt-in and validation evidence,
+see [PKG-03 secure configuration](docs/egm/10-pkg-03-secure-configuration.md).
 
 ---
 

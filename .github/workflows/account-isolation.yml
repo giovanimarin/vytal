@@ -3,7 +3,7 @@ name: Account isolation regression
 on:
   pull_request:
   push:
-    branches: [fix/pkg-01-account-isolation-clean, fix/pkg-02-session-refresh, master]
+    branches: [fix/pkg-01-account-isolation-clean, fix/pkg-02-session-refresh, 'codex/**', master]
 
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
         working-directory: backend
         run: pytest --cov=app --cov-report=term --cov-fail-under=30 --junitxml=test-results.xml
         env:
-          ENVIRONMENT: local
+          ENVIRONMENT: test
           GOOGLE_CLIENT_ID: synthetic-ci
           GOOGLE_CLIENT_SECRET: synthetic-ci
       - name: Public v1 OpenAPI compatibility
@@ -43,6 +43,10 @@ jobs:
           backend/app/adapters/cloud/base.py backend/app/adapters/cloud/local.py
           backend/app/adapters/cloud/gcp.py backend/app/repositories/refresh_token_repo.py
           backend/app/services/auth_service.py
+          backend/app/config/security.py backend/app/config/settings.py
+          backend/app/config/cloud_config.py backend/app/config/safe_logging.py
+          backend/app/auth/jwt_handler.py backend/app/adapters/connectors/google_fit.py
+          backend/app/api/v1/dev_seed.py backend/tests/unit/config backend/tests/conftest.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -77,6 +81,8 @@ jobs:
       - name: Build Android Hermes bundle
         run: npm run build:android
         env:
+          NODE_ENV: production
+          EXPO_PUBLIC_API_URL: https://api.example.invalid/api/v1
           CI: '1'
           EXPO_NO_TELEMETRY: '1'
 
@@ -94,8 +100,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm test
-      - run: node --check tests/auth.test.cjs
+      - run: node --check tests/auth.test.cjs && node --check tests/config.test.cjs && node --check config/security.js && node --check next.config.js
       - run: npx tsc --noEmit --incremental false
       - run: npm run build
         env:
+          VYTAL_BACKEND_URL: https://backend.example.invalid
           NEXT_TELEMETRY_DISABLED: '1'

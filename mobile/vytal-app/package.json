@@ -7,9 +7,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "node tests/auth.test.cjs",
+    "test": "node tests/auth.test.cjs && node tests/config.test.cjs",
     "typecheck": "tsc --noEmit",
-    "lint:pkg01": "eslint app/login.tsx app/register.tsx app/connect.tsx app/_layout.tsx \"app/(dashboard)/data-sources.tsx\" src/types/auth.ts src/store/authStore.ts src/services/api.ts src/services/auth.ts src/services/queryClient.ts src/services/sessionRefresh.ts src/components/ui/SideMenu.tsx src/hooks/useProfile.ts tests/*.cjs eslint.config.mjs",
+    "lint:pkg01": "eslint app/login.tsx app/register.tsx app/connect.tsx app/_layout.tsx \"app/(dashboard)/data-sources.tsx\" src/types/auth.ts src/store/authStore.ts src/services/api.ts src/services/auth.ts src/services/queryClient.ts src/services/sessionRefresh.ts src/components/ui/SideMenu.tsx src/hooks/useProfile.ts tests/*.cjs eslint.config.mjs config/security.js config/security.d.ts app.config.js",
     "build:android": "expo export --platform android",
     "test:api": "node tests/auth-api.test.cjs"
   },

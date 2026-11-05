@@ -74,7 +74,7 @@ with patch('app.services.oauth_service.get_connector', return_value=connector), 
         if label == 'missing-email':
             del claims['email']
         actors[label] = {'access_token': jwt.encode(
-            claims, 'incorrect-signing-key' if label == 'forged' else settings.jwt_secret_key,
+            claims, 'incorrect-signing-key' if label == 'forged' else settings.jwt_secret_key.get_secret_value(),
             algorithm=settings.jwt_algorithm)}
     actors['unknown'] = {'user_id': 'nonexistent-account',
                          'state': OAuthService()._generate_state('nonexistent-account')}

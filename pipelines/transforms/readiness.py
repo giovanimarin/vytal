@@ -27,7 +27,7 @@ class CalculateReadiness(beam.DoFn):
             else:
                 logger.info("Insufficient data for readiness: user=%s date=%s", user_id, date)
         except Exception as e:
-            logger.error("Failed to calculate readiness for user=%s date=%s: %s", user_id, date, e)
+            logger.error("Failed to calculate readiness (%s)", type(e).__name__)
             yield beam.pvalue.TaggedOutput("dead_letter", {"user_id": user_id, "date": date, "error": str(e)})
 
     async def _calculate(self, user_id: str, date: str):

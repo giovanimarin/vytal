@@ -23,6 +23,7 @@ Module._load = function (name, parent, main) {
   return load.call(this, name, parent, main)
 }
 global.__DEV__ = false
+process.env.EXPO_PUBLIC_API_URL ||= 'https://api.example.invalid/api/v1'
 const { AxiosError } = require('axios')
 const { useAuthStore } = require('../src/store/authStore.ts')
 const { api } = require('../src/services/api.ts')

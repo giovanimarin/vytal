@@ -12,16 +12,17 @@ Uso:
 import argparse
 import asyncio
 import logging
-import sys
 import os
+import sys
 from datetime import date, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-
 from app.adapters.cloud.factory import get_pipeline, init_warehouse
+from app.config.safe_logging import log_discarded_event
+
 from pipelines.transforms.readiness import CalculateReadiness
 
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +61,7 @@ def run(user_id: str, start_date: str, end_date: str):
         results | "LogResults" >> beam.Map(
             lambda r: logger.info("Readiness calculated: user=%s date=%s score=%s", r["user_id"], r["date"], r["readiness_score"])
         )
-        dead    | "LogDead"    >> beam.Map(lambda x: logger.warning("Dead letter (readiness): %s", x))
+        dead    | "LogDead"    >> beam.Map(lambda x: log_discarded_event(x, "readiness"))
 
     logger.info("Readiness pipeline completed.")
 
