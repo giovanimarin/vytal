@@ -1,0 +1,13 @@
+{
+  "body": {
+    "activity": [],
+    "date": "2026-01-15",
+    "heart_rate": null,
+    "sleep": null,
+    "steps": null,
+    "stress": null,
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

@@ -1,0 +1,35 @@
+{
+  "body": {
+    "activity": [],
+    "date": "2026-01-15",
+    "heart_rate": {
+      "average_bpm": 75.0,
+      "date": "2026-01-15",
+      "max_bpm": 90.0,
+      "min_bpm": 60.0,
+      "normalized_at": "2026-01-15T12:00:00+00:00",
+      "record_id": "00000000-0000-0000-0000-00000000000b",
+      "resting_bpm": 60.0,
+      "source_event_id": "00000000-0000-0000-0000-000000000009",
+      "user_id": "00000000-0000-0000-0000-000000000001"
+    },
+    "sleep": {
+      "awake_minutes": 0,
+      "date": "2026-01-15",
+      "deep_sleep_minutes": 0,
+      "duration_minutes": 480,
+      "light_sleep_minutes": 0,
+      "normalized_at": "2026-01-15T12:00:00+00:00",
+      "record_id": "00000000-0000-0000-0000-00000000000a",
+      "rem_sleep_minutes": 0,
+      "sleep_score": 85.0,
+      "source_event_id": "00000000-0000-0000-0000-000000000008",
+      "user_id": "00000000-0000-0000-0000-000000000001"
+    },
+    "steps": null,
+    "stress": null,
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

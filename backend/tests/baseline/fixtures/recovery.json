@@ -1,0 +1,140 @@
+{
+  "body": {
+    "date": "2026-01-15",
+    "muscles": [
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "rear_shoulders",
+        "record_id": "00000000-0000-0000-0000-00000000000b",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "biceps",
+        "record_id": "00000000-0000-0000-0000-00000000000c",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "upper_back",
+        "record_id": "00000000-0000-0000-0000-00000000000e",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "lower_back",
+        "record_id": "00000000-0000-0000-0000-00000000000f",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "core",
+        "record_id": "00000000-0000-0000-0000-000000000010",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "glutes",
+        "record_id": "00000000-0000-0000-0000-000000000011",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "quads",
+        "record_id": "00000000-0000-0000-0000-000000000012",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "hamstrings",
+        "record_id": "00000000-0000-0000-0000-000000000013",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "calves",
+        "record_id": "00000000-0000-0000-0000-000000000014",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": null,
+        "last_workout_id": null,
+        "muscle_group": "hip_flexors",
+        "record_id": "00000000-0000-0000-0000-000000000015",
+        "recovery_score": 100.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": "2026-01-17T12:00:00+00:00",
+        "last_workout_id": "00000000-0000-0000-0000-000000000007",
+        "muscle_group": "chest",
+        "record_id": "00000000-0000-0000-0000-000000000009",
+        "recovery_score": 0.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": "2026-01-17T12:00:00+00:00",
+        "last_workout_id": "00000000-0000-0000-0000-000000000007",
+        "muscle_group": "front_shoulders",
+        "record_id": "00000000-0000-0000-0000-00000000000a",
+        "recovery_score": 0.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "date": "2026-01-15",
+        "estimated_full_recovery_at": "2026-01-17T12:00:00+00:00",
+        "last_workout_id": "00000000-0000-0000-0000-000000000007",
+        "muscle_group": "triceps",
+        "record_id": "00000000-0000-0000-0000-00000000000d",
+        "recovery_score": 0.0,
+        "updated_at": "2026-01-15T12:00:00+00:00",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}

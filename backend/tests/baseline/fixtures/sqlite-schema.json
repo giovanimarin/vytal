@@ -1,0 +1,1429 @@
+{
+  "foreign_keys_enabled_by_default": 0,
+  "tables": {
+    "dim_user": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "user_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "provider",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "created_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "name": "sqlite_autoindex_dim_user_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE dim_user ( user_id TEXT PRIMARY KEY, provider TEXT NOT NULL, created_at TEXT NOT NULL )"
+    },
+    "fact_daily_readiness": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "readiness_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "readiness_score",
+          "notnull": 1,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "readiness_category",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "sleep_score_contribution",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "hr_score_contribution",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "activity_score_contribution",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 8,
+          "default": null,
+          "name": "stress_score_contribution",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 9,
+          "default": null,
+          "name": "insight_text",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 10,
+          "default": null,
+          "name": "calculated_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "readiness_id"
+          ],
+          "name": "sqlite_autoindex_fact_daily_readiness_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "name": "sqlite_autoindex_fact_daily_readiness_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE fact_daily_readiness ( readiness_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, readiness_score REAL NOT NULL, readiness_category TEXT NOT NULL, sleep_score_contribution REAL, hr_score_contribution REAL, activity_score_contribution REAL, stress_score_contribution REAL, insight_text TEXT, calculated_at TEXT NOT NULL, UNIQUE(user_id, date) )"
+    },
+    "fact_readiness_by_modality": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "modality",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "score",
+          "notnull": 1,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "status",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "recommendation",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 7,
+          "default": "0",
+          "name": "hrv_available",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 8,
+          "default": "0",
+          "name": "low_confidence",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 9,
+          "default": null,
+          "name": "calculated_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "name": "idx_readiness_modality_user_date",
+          "origin": "c",
+          "partial": 0,
+          "unique": 0
+        },
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_fact_readiness_by_modality_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "user_id",
+            "date",
+            "modality"
+          ],
+          "name": "sqlite_autoindex_fact_readiness_by_modality_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE fact_readiness_by_modality ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, modality TEXT NOT NULL, score REAL NOT NULL, status TEXT NOT NULL, recommendation TEXT, hrv_available INTEGER NOT NULL DEFAULT 0, low_confidence INTEGER NOT NULL DEFAULT 0, calculated_at TEXT NOT NULL, UNIQUE(user_id, date, modality) )"
+    },
+    "muscle_recovery": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "muscle_group",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "recovery_score",
+          "notnull": 1,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "last_workout_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "estimated_full_recovery_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "updated_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "name": "idx_muscle_recovery_user_date",
+          "origin": "c",
+          "partial": 0,
+          "unique": 0
+        },
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_muscle_recovery_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "user_id",
+            "date",
+            "muscle_group"
+          ],
+          "name": "sqlite_autoindex_muscle_recovery_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE muscle_recovery ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, muscle_group TEXT NOT NULL, recovery_score REAL NOT NULL, last_workout_id TEXT, estimated_full_recovery_at TEXT, updated_at TEXT NOT NULL, UNIQUE(user_id, date, muscle_group) )"
+    },
+    "normalized_activity": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "activity_type",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "duration_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "intensity",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "calories_burned",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "source_event_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 8,
+          "default": null,
+          "name": "normalized_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_normalized_activity_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE normalized_activity ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, activity_type TEXT, duration_minutes INTEGER, intensity TEXT, calories_burned REAL, source_event_id TEXT, normalized_at TEXT )"
+    },
+    "normalized_heart_rate": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "resting_bpm",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "average_bpm",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "max_bpm",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "min_bpm",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "source_event_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 8,
+          "default": null,
+          "name": "normalized_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_normalized_heart_rate_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE normalized_heart_rate ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, resting_bpm REAL, average_bpm REAL, max_bpm REAL, min_bpm REAL, source_event_id TEXT, normalized_at TEXT )"
+    },
+    "normalized_sleep": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "duration_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "deep_sleep_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "light_sleep_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "rem_sleep_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "awake_minutes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 8,
+          "default": null,
+          "name": "sleep_score",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 9,
+          "default": null,
+          "name": "source_event_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 10,
+          "default": null,
+          "name": "normalized_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_normalized_sleep_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE normalized_sleep ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, duration_minutes INTEGER, deep_sleep_minutes INTEGER, light_sleep_minutes INTEGER, rem_sleep_minutes INTEGER, awake_minutes INTEGER, sleep_score REAL, source_event_id TEXT, normalized_at TEXT )"
+    },
+    "normalized_steps": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "total_steps",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "hourly_steps",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "source_event_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "normalized_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_normalized_steps_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE normalized_steps ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, total_steps INTEGER, hourly_steps TEXT, source_event_id TEXT, normalized_at TEXT )"
+    },
+    "normalized_stress": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "record_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "stress_score",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "available",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "source_event_id",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "normalized_at",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "record_id"
+          ],
+          "name": "sqlite_autoindex_normalized_stress_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE normalized_stress ( record_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, stress_score REAL, available INTEGER, source_event_id TEXT, normalized_at TEXT )"
+    },
+    "oauth_tokens": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "provider",
+          "notnull": 1,
+          "pk": 2,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "access_token",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "refresh_token",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "expires_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id",
+            "provider"
+          ],
+          "name": "sqlite_autoindex_oauth_tokens_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE oauth_tokens ( user_id TEXT NOT NULL, provider TEXT NOT NULL, access_token TEXT NOT NULL, refresh_token TEXT, expires_at TEXT NOT NULL, PRIMARY KEY (user_id, provider) )"
+    },
+    "raw_health_events": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "event_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "provider",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "metric_type",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "raw_payload",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "collected_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "ingested_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "pipeline_run",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "event_id"
+          ],
+          "name": "sqlite_autoindex_raw_health_events_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE raw_health_events ( event_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, provider TEXT NOT NULL, metric_type TEXT NOT NULL, raw_payload TEXT NOT NULL, collected_at TEXT NOT NULL, ingested_at TEXT NOT NULL, pipeline_run TEXT NOT NULL )"
+    },
+    "refresh_tokens": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "token_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "token_hash",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "expires_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "created_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": "0",
+          "name": "revoked",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "name": "idx_refresh_tokens_user_id",
+          "origin": "c",
+          "partial": 0,
+          "unique": 0
+        },
+        {
+          "columns": [
+            "token_id"
+          ],
+          "name": "sqlite_autoindex_refresh_tokens_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "token_hash"
+          ],
+          "name": "sqlite_autoindex_refresh_tokens_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE refresh_tokens ( token_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, created_at TEXT NOT NULL, revoked INTEGER NOT NULL DEFAULT 0 )"
+    },
+    "users": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "user_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "email",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "password_hash",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "birth_date",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "weight_kg",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "height_cm",
+          "notnull": 0,
+          "pk": 0,
+          "type": "REAL"
+        },
+        {
+          "cid": 7,
+          "default": "'general_wellness'",
+          "name": "goal",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 8,
+          "default": "NULL",
+          "name": "gender",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 9,
+          "default": "NULL",
+          "name": "preferred_modalities",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 10,
+          "default": null,
+          "name": "created_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 11,
+          "default": null,
+          "name": "updated_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "email"
+          ],
+          "name": "idx_users_email",
+          "origin": "c",
+          "partial": 0,
+          "unique": 0
+        },
+        {
+          "columns": [
+            "user_id"
+          ],
+          "name": "sqlite_autoindex_users_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "email"
+          ],
+          "name": "sqlite_autoindex_users_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE users ( user_id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, password_hash TEXT NOT NULL, birth_date TEXT, weight_kg REAL, height_cm REAL, goal TEXT DEFAULT 'general_wellness', gender TEXT DEFAULT NULL, preferred_modalities TEXT DEFAULT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL )"
+    },
+    "wellness_feedback": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "feedback_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "feeling_score",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "workout_worthwhile",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "workout_readiness",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "energy_level",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "notes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 8,
+          "default": null,
+          "name": "created_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "feedback_id"
+          ],
+          "name": "sqlite_autoindex_wellness_feedback_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        },
+        {
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "name": "sqlite_autoindex_wellness_feedback_2",
+          "origin": "u",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE wellness_feedback ( feedback_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, feeling_score INTEGER, workout_worthwhile INTEGER, workout_readiness TEXT, energy_level INTEGER, notes TEXT, created_at TEXT NOT NULL, UNIQUE(user_id, date) )"
+    },
+    "workout_exercises": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "exercise_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "workout_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "name",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "muscle_groups",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "sets",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "reps",
+          "notnull": 0,
+          "pk": 0,
+          "type": "INTEGER"
+        }
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "workout_history",
+          "workout_id",
+          "workout_id",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "indexes": [
+        {
+          "columns": [
+            "exercise_id"
+          ],
+          "name": "sqlite_autoindex_workout_exercises_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE workout_exercises ( exercise_id TEXT PRIMARY KEY, workout_id TEXT NOT NULL, name TEXT NOT NULL, muscle_groups TEXT NOT NULL, sets INTEGER, reps INTEGER, FOREIGN KEY (workout_id) REFERENCES workout_history(workout_id) )"
+    },
+    "workout_history": {
+      "columns": [
+        {
+          "cid": 0,
+          "default": null,
+          "name": "workout_id",
+          "notnull": 0,
+          "pk": 1,
+          "type": "TEXT"
+        },
+        {
+          "cid": 1,
+          "default": null,
+          "name": "user_id",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 2,
+          "default": null,
+          "name": "date",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 3,
+          "default": null,
+          "name": "modality",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 4,
+          "default": null,
+          "name": "intensity",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 5,
+          "default": null,
+          "name": "duration_min",
+          "notnull": 1,
+          "pk": 0,
+          "type": "INTEGER"
+        },
+        {
+          "cid": 6,
+          "default": null,
+          "name": "notes",
+          "notnull": 0,
+          "pk": 0,
+          "type": "TEXT"
+        },
+        {
+          "cid": 7,
+          "default": null,
+          "name": "created_at",
+          "notnull": 1,
+          "pk": 0,
+          "type": "TEXT"
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "name": "idx_workout_history_user_date",
+          "origin": "c",
+          "partial": 0,
+          "unique": 0
+        },
+        {
+          "columns": [
+            "workout_id"
+          ],
+          "name": "sqlite_autoindex_workout_history_1",
+          "origin": "pk",
+          "partial": 0,
+          "unique": 1
+        }
+      ],
+      "sql": "CREATE TABLE workout_history ( workout_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, modality TEXT NOT NULL, intensity TEXT NOT NULL, duration_min INTEGER NOT NULL, notes TEXT, created_at TEXT NOT NULL )"
+    }
+  }
+}

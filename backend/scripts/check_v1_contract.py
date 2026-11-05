@@ -16,31 +16,54 @@ def contract(backend: Path, config: Path) -> dict:
         [sys.executable, "-c", "import json; from app.main import app; print(json.dumps(app.openapi()))"],
         cwd=backend, env=env,
     )
-    document = json.loads(raw)
-    for path in document["paths"].values():
-        for operation in path.values():
-            if not isinstance(operation, dict):
-                continue
-            # Editorial docstring punctuation does not change the wire contract.
-            operation.pop("description", None)
-            if "parameters" not in operation:
-                continue
-            operation["parameters"].sort(key=lambda p: (p["in"], p["name"]))
-            for parameter in operation["parameters"]:
-                # Explicit Optional fixes describe existing None defaults; never relax
-                # required identifiers, request bodies, security or response schemas.
-                schema = parameter["schema"]
-                if parameter["in"] == "query" and not parameter.get("required", False):
-                    branches = schema.get("anyOf", [])
-                    if branches == [{"type": "string"}, {"type": "null"}]:
-                        del schema["anyOf"]
-                        schema["type"] = "string"
-    return document
+    return normalize_contract(json.loads(raw))
+
+
+def normalize_contract(document: dict) -> dict:
+    """Ignore editorial descriptions only; preserve required/null/security/types.
+
+    Strict equality is intentionally conservative, including additive changes:
+    an intentional API change needs explicit baseline review, never auto-update.
+    """
+    import copy
+
+    result = copy.deepcopy(document)
+
+    maps = {"properties", "schemas", "paths", "content", "responses", "securitySchemes", "headers", "$defs"}
+    literals = {"default", "enum", "const", "example", "examples"}
+
+    def normalize(value, context=None):
+        if isinstance(value, dict):
+            if context not in maps:
+                value.pop("description", None)
+            for name, child in value.items():
+                if name not in literals:
+                    normalize(child, name)
+            if isinstance(value.get("parameters"), list):
+                value["parameters"].sort(key=lambda p: (p.get("in", ""), p.get("name", "")))
+        elif isinstance(value, list):
+            for child in value:
+                normalize(child)
+
+    normalize(result)
+    return result
+
+
+def assert_compatible(before: dict, after: dict) -> None:
+    if json.dumps(normalize_contract(before), sort_keys=True) != json.dumps(normalize_contract(after), sort_keys=True):
+        raise ValueError("Public OpenAPI contract differs: review paths, inputs, security and responses")
+
+
+def assert_wire_equal(before: dict, after: dict) -> None:
+    """Exact observed JSON contract, including nulls and bool/int/float types."""
+    if json.dumps(before, sort_keys=True) != json.dumps(after, sort_keys=True):
+        raise ValueError("Observed v1 response contract differs")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="origin/master")
+    parser.add_argument("--snapshot", type=Path, help="Also compare with a versioned baseline (read only)")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     with tempfile.TemporaryDirectory(prefix="vytal-contract-") as temp:
@@ -53,8 +76,12 @@ def main() -> None:
         config = work / "config.yaml"
         config.write_text(f"cloud:\n  provider: local\nlocal:\n  data_dir: {work}\n  db_path: {work}/test.db\n")
         before, after = contract(work / "backend", config), contract(root / "backend", config)
-        if before != after:
-            raise SystemExit("Public OpenAPI contract differs beyond optional query nullability/order")
+        try:
+            assert_compatible(before, after)
+            if args.snapshot:
+                assert_compatible(json.loads(args.snapshot.read_text()), after)
+        except ValueError as error:
+            raise SystemExit(str(error)) from None
     print("Public OpenAPI compatible: paths, inputs, security and responses preserved")
 
 

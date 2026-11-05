@@ -1,0 +1,106 @@
+{
+  "body": {
+    "date": "2026-01-15",
+    "modalities": [
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "crossfit",
+        "recommendation": "Ótimo dia para Crossfit — seu corpo está recuperado para esforço total.",
+        "record_id": "00000000-0000-0000-0000-00000000000d",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "corrida",
+        "recommendation": "Dia excelente para correr. Bom momento para treinos de velocidade ou longa distância.",
+        "record_id": "00000000-0000-0000-0000-00000000000e",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 0,
+        "modality": "academia",
+        "recommendation": "Ótimo para treinar na academia. Foco em progressão de carga.",
+        "record_id": "00000000-0000-0000-0000-00000000000f",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "tenis",
+        "recommendation": "Dia perfeito para o tênis. Bom para treinos técnicos e de competição.",
+        "record_id": "00000000-0000-0000-0000-000000000010",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "pilates",
+        "recommendation": "Ótimo para Pilates. Corpo preparado para trabalhar core e mobilidade.",
+        "record_id": "00000000-0000-0000-0000-000000000011",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "surfe",
+        "recommendation": "Dia excelente para surfar — ombros e core estão prontos para o esforço.",
+        "record_id": "00000000-0000-0000-0000-000000000012",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "yoga",
+        "recommendation": "Ótimo dia para yoga. Considere práticas mais desafiadoras como Ashtanga.",
+        "record_id": "00000000-0000-0000-0000-000000000013",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      },
+      {
+        "calculated_at": "2026-01-15T12:00:00+00:00",
+        "date": "2026-01-15",
+        "hrv_available": 0,
+        "low_confidence": 1,
+        "modality": "ciclismo",
+        "recommendation": "Ótimo para ciclismo. Bom dia para treinos de resistência ou subidas.",
+        "record_id": "00000000-0000-0000-0000-000000000014",
+        "score": 86.7,
+        "status": "green",
+        "user_id": "00000000-0000-0000-0000-000000000001"
+      }
+    ],
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  },
+  "provider_calls": 0,
+  "status": 200
+}
