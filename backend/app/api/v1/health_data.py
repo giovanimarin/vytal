@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+from app.auth.authorization import authorized_account_id
+from app.auth.dependencies import AuthenticatedUser, AuthorizedAccountId
 from app.services.health_data_service import HealthDataService
 
 router = APIRouter(prefix="/health-data", tags=["health-data"])
@@ -19,8 +21,9 @@ class SyncRequest(BaseModel):
 
 
 @router.post("/sync", status_code=status.HTTP_202_ACCEPTED)
-async def sync_health_data(body: SyncRequest):
+async def sync_health_data(body: SyncRequest, current_user: AuthenticatedUser):
     """Inicia sincronização de dados do provider para o usuário."""
+    account_id = authorized_account_id(current_user["user_id"], body.user_id)
     try:
         start = datetime.fromisoformat(body.start_date).replace(tzinfo=timezone.utc)
         end   = datetime.fromisoformat(body.end_date).replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
@@ -29,7 +32,7 @@ async def sync_health_data(body: SyncRequest):
 
     try:
         result = await _service.sync(
-            user_id=body.user_id,
+            user_id=account_id,
             provider=body.provider,
             start_date=start,
             end_date=end,
@@ -42,7 +45,7 @@ async def sync_health_data(body: SyncRequest):
 
 
 @router.get("/{user_id}/summary")
-async def get_health_summary(user_id: str, date: str):
+async def get_health_summary(user_id: AuthorizedAccountId, date: str):
     """Retorna dados de saúde normalizados do dia para o mobile."""
     try:
         datetime.fromisoformat(date)
