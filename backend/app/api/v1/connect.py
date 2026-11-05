@@ -16,13 +16,13 @@ class OAuthCallbackRequest(BaseModel):
 
 
 @router.get("/{provider}/auth-url")
-async def get_auth_url(provider: str, user_id: AuthorizedAccountId, redirect_uri: str = None):
+async def get_auth_url(provider: str, user_id: AuthorizedAccountId, redirect_uri: str | None = None):
     """Retorna a URL de autorização OAuth do provider."""
     redirect_uri = redirect_uri or settings.google_redirect_uri
     try:
         url, state = _service.get_auth_url(provider, user_id, redirect_uri)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
     return {"auth_url": url, "state": state}
 
@@ -39,7 +39,7 @@ async def oauth_callback_get(provider: str, code: str, state: str, current_user:
             redirect_uri=settings.google_redirect_uri,
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
     return {
         "user_id": token.user_id,
@@ -62,7 +62,7 @@ async def oauth_callback(provider: str, body: OAuthCallbackRequest, current_user
             redirect_uri=body.redirect_uri,
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
     return {
         "user_id": token.user_id,

@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { api } from '../../src/services/api'
+import { getHealthAuthUrl, authErrorMessage } from '../../src/services/auth'
 import { useAuthStore } from '../../src/store/authStore'
 
 interface DataSource {
@@ -99,8 +100,8 @@ export default function DataSourcesScreen() {
         next.delete(sourceId)
         return next
       })
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Não foi possível desconectar: ${msg}`)
     } finally {
       setLoadingSource(null)
@@ -111,13 +112,11 @@ export default function DataSourcesScreen() {
     setLoadingSource('google_fit')
     setErrorMsg(null)
     try {
-      const { data } = await api.get('/connect/google_fit/auth-url', {
-        params: { user_id: userId },
-      })
+      const data = await getHealthAuthUrl('google_fit')
       // Open OAuth URL in system browser
       await Linking.openURL(data.auth_url)
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Não foi possível iniciar a conexão: ${msg}`)
     } finally {
       setLoadingSource(null)

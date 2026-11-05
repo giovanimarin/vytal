@@ -1,6 +1,5 @@
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
@@ -16,11 +15,11 @@ _repo = WellnessRepository()
 class WellnessFeedbackRequest(BaseModel):
     user_id: str
     date: str
-    feeling_score: Optional[int] = None
-    workout_worthwhile: Optional[bool] = None
-    workout_readiness: Optional[str] = None
-    energy_level: Optional[int] = None
-    notes: Optional[str] = None
+    feeling_score: int | None = None
+    workout_worthwhile: bool | None = None
+    workout_readiness: str | None = None
+    energy_level: int | None = None
+    notes: str | None = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -37,14 +36,14 @@ async def create_feedback(body: WellnessFeedbackRequest, current_user: Authentic
         "workout_readiness": body.workout_readiness,
         "energy_level": body.energy_level,
         "notes": body.notes,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     await _repo.save(record)
     return {"status": "saved", "feedback_id": feedback_id}
 
 
 @router.get("/{user_id}")
-async def get_feedback(user_id: AuthorizedAccountId, date: str = None):
+async def get_feedback(user_id: AuthorizedAccountId, date: str | None = None):
     """Recupera o feedback de bem-estar do usuário para a data informada."""
     from datetime import date as _date
     target_date = date if date is not None else str(_date.today())

@@ -11,8 +11,7 @@ import {
   ScrollView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { api } from '../src/services/api'
-import { useAuthStore } from '../src/store/authStore'
+import { register, authErrorMessage } from '../src/services/auth'
 
 export default function RegisterScreen() {
   const [name, setName] = useState('')
@@ -28,8 +27,6 @@ export default function RegisterScreen() {
   const [confirmFocused, setConfirmFocused] = useState(false)
 
   const router = useRouter()
-  const setTokens = useAuthStore((s) => s.setTokens)
-  const setProfile = useAuthStore((s) => s.setProfile)
 
   async function handleRegister() {
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
@@ -40,35 +37,18 @@ export default function RegisterScreen() {
       setErrorMsg('As senhas não coincidem.')
       return
     }
-    if (password.length < 6) {
-      setErrorMsg('A senha deve ter pelo menos 6 caracteres.')
+    if (password.length < 8) {
+      setErrorMsg('A senha deve ter pelo menos 8 caracteres.')
       return
     }
 
     setLoading(true)
     setErrorMsg(null)
     try {
-      const { data } = await api.post('/auth/register', {
-        name: name.trim(),
-        email: email.trim(),
-        password,
-      })
-      setTokens(data.access_token, data.refresh_token)
-      if (data.user) {
-        setProfile({
-          user_id: data.user.user_id,
-          email: data.user.email,
-          name: data.user.name,
-          birth_date: data.user.birth_date ?? null,
-          weight_kg: data.user.weight_kg ?? null,
-          height_cm: data.user.height_cm ?? null,
-          goal: data.user.goal ?? null,
-        })
-      }
+      await register(name, email, password)
       router.replace('/profile-setup')
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Não foi possível criar a conta: ${msg}`)
     } finally {
       setLoading(false)

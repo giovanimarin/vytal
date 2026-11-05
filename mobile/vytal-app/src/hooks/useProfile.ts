@@ -3,8 +3,10 @@ import { api } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 
 export function useUserProfile() {
+  const userId = useAuthStore((s) => s.userId)
   return useQuery({
-    queryKey: ['user-profile'],
+    queryKey: ['user-profile', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get('/users/me')
       return data
@@ -15,6 +17,7 @@ export function useUserProfile() {
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient()
+  const userId = useAuthStore((s) => s.userId)
   const setProfile = useAuthStore((s) => s.setProfile)
   return useMutation({
     mutationFn: async (
@@ -30,8 +33,9 @@ export function useUpdateProfile() {
       return data
     },
     onSuccess: (data) => {
+      if (useAuthStore.getState().userId !== userId) return
       setProfile(data)
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] })
     },
   })
 }

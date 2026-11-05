@@ -1,16 +1,20 @@
-# PKG-01 — isolamento de contas v1: implementação para revisão
+# PKG-01 — isolamento v1 e compatibilidade Android para revisão
 
-## Autorização e rastreabilidade
+## Escopo, autorização e base limpa
 
-O Product Owner autorizou explicitamente, nesta tarefa, apenas PKG-01: correção do isolamento das APIs v1 e regressões automatizadas. O recorte corresponde ao backlog `06-implementation-packages.md` no commit `f300ebe6082043d7e7a29b2f8ce16816a99a9760`, D10/D19, S01, SEC-01 e T-01. Esta autorização delimitada satisfaz o gate de implementação somente deste pacote; não aprova integralmente o Elephant v0.2 nem os outros pacotes. Branch: `fix/pkg-01-account-isolation`, derivada desse commit. Merge, migração e deploy não realizados nem autorizados por esta entrega.
+O Product Owner autorizou explicitamente o isolamento v1 e, nesta conclusão, a correção da identidade autenticada no Android, testes, builds, revisão Goldfish e PR draft contra master. Não há aprovação integral do Elephant nem autorização de merge/deploy.
 
-## Correção e operações verificadas
+Base: `master` em `328f2bc01eec2272376f95396472f36c42326fff`. Branch: `fix/pkg-01-account-isolation-clean`. Apenas o commit funcional `6f40ccbc814c648c2bba573cd477812886b6988a` foi aplicado por cherry-pick, como `3f678a7`; a compatibilidade Android/validação fica em commit adicional. As branches anteriores e PR #8 são preservados. Não foram trazidos os 13 commits e 14 arquivos de documentação/governança que inflavam o PR #8. Este arquivo é a evidência específica do pacote, já incluída no commit funcional, atualizada com os resultados finais.
 
-A política pura `app/auth/authorization.py` compara exatamente o identificador solicitado com o `sub` autenticado e retorna exclusivamente a identidade autenticada. A dependência de autorização atende path/query; handlers de corpos e o serviço OAuth usam a mesma política. O mapeamento HTTP central retorna `404 {"detail":"Not found"}` sem identificadores. Não há consulta para descobrir se a outra conta existe. Assinatura/tipo/expiração do JWT continuam validados pelo mecanismo existente; claims de identidade ausentes, vazios ou de tipo inválido agora falham com 401.
+Fontes mantidas nas branches originais: [backlog versionado](https://github.com/giovanimarin/vytal/blob/f300ebe6082043d7e7a29b2f8ce16816a99a9760/docs/egm/06-implementation-packages.md) e seus requisitos D10/D19, S01, SEC-01/T-01. Referenciá-los não equivale a aprovar ou incorporar toda a especificação em master.
 
-Todas as rotas abaixo têm prefixo `/api/v1`:
+## Backend: 15 operações
 
-| Origem do identificador | Operações corrigidas |
+Política pura `auth/authorization.py`: comparação exata; retorna apenas a identidade autenticada. `auth/dependencies.py` valida claims obrigatórios e aplica a política a path/query. Handlers de corpo e OAuth usam a mesma política. Divergência: `404 {"detail":"Not found"}` antes de dados pessoais/efeito externo, sem consultar a existência de outra conta.
+
+Todas as rotas têm prefixo `/api/v1`:
+
+| Identidade solicitada | Operações protegidas |
 |---|---|
 | Query | GET `/connect/{provider}/auth-url` |
 | State assinado | GET e POST `/connect/{provider}/callback` |
@@ -21,33 +25,67 @@ Todas as rotas abaixo têm prefixo `/api/v1`:
 | Path | GET `/muscles/{user_id}/recovery`, `/muscles/{user_id}/suggestion` |
 | Path | GET `/wellness-feedback/{user_id}` |
 
-São 15 operações. No OAuth, primeiro se valida formato/HMAC de state, depois sua conta contra a identidade autenticada, antes de obter connector, trocar código, salvar token ou assegurar usuário. `expected_user_id` passa a ser argumento obrigatório keyword-only de `OAuthService.handle_callback`; seus dois chamadores foram atualizados.
+OAuth: validar HMAC/formato de state → comparar conta → connector/exchange/save/ensure_user. `expected_user_id` obrigatório no serviço, fornecido pelos dois handlers. GET/PATCH `/users/me` continua derivando identidade do token; catálogo continua autenticado. Não há PUT/DELETE pessoal por ID nessas rotas montadas. `advanced_metrics.py` duplicado não é montado; a rota efetiva protegida está em `readiness.py`.
 
-GET/PATCH `/users/me` já derivavam a conta do token: seus controles permanecem e recebem regressões com identidade manipulada no corpo/query. O catálogo de exercícios continua autenticado e acessível. Não há atualização/exclusão de recursos pessoais por ID nas demais rotas v1 montadas; PATCH de perfil e o upsert de feedback estão cobertos. Login/cadastro e refresh/logout recebem credenciais, não seletores de conta. O arquivo `api/v1/advanced_metrics.py` não é montado: o endpoint efetivo de métricas avançadas está em `readiness.py`, protegido neste pacote.
+Mantidos paths, payloads, respostas próprias e códigos: Bearer ausente 403, JWT inválido 401 e state inválido 400. IDs divergentes passam intencionalmente a 404. Correções de lint nos arquivos do pacote tornam explícito `str | None` para query opcional já aceita pelo runtime, modernizam anotações/imports e especificam encadeamento de exceções. Não se alteram fórmulas, repositórios, esquema do banco ou infraestrutura. OpenAPI preserva interfaces, security e respostas; comparação normaliza apenas ordem, descrição editorial e nulabilidade explícita desses parâmetros opcionais, nunca identificadores obrigatórios ou corpos.
 
-## Evidência de testes
+## Android oficial: identidade, sessão e compatibilidade
 
-1. Antes de editar código funcional, a primeira matriz de API estabilizada apresentou **45 falhas e 62 aprovações**: A→B, B→A e A→conta inexistente em cada uma das 15 operações. Feedback reproduziu POST 201 e GET 200 indevidos; callbacks também aceitavam state válido de outra conta. As assertions exigiam negação, sem xfail ou inversão para aceitar o defeito.
-2. Após a correção, esses **107 cenários passaram**. A suíte foi ampliada com dados próprios não vazios, manipulação de perfil, catálogo e tokens inválidos.
-3. Resultado final: **202 testes passaram**, sendo **66 existentes**, **123 de API** e **13 unitários da política pura**. Nenhum teste existente foi enfraquecido.
-4. A API é exercitada com TestClient, cadastro real de duas contas, JWTs efetivamente assinados e SQLite efêmero. Apenas o provedor externo é sintético. Tokens expirados, assinatura incorreta, tipo refresh, sub vazio e email ausente/vazio são rejeitados. Não se substitui a dependência de autenticação.
-5. As negações verificam zero chamadas a query/insert/provider e digest SQLite inalterado, inclusive para contas inexistentes. O processo ASGI separado recebe configuração, banco e chaves aleatórias antes de importar singletons, evitando interferência com a suíte existente. HTTP externo é bloqueado no worker; nenhum Fit/Garmin/produção é acessado. Credenciais sintéticas ficam ocultas no repr das fixtures.
+- Login e cadastro usam o contrato plano real v1 (`user_id/email/name/access_token/refresh_token`), validam campos obrigatórios e publicam perfil/credenciais juntos. Não esperam `data.user`. Cadastro usa o mínimo de oito caracteres já exigido pelo backend.
+- As telas de conexão usam `getHealthAuthUrl`, com ID real da sessão e Bearer. Removidos ID `user-mvp-1`, setters arbitrários de identidade/autenticação e botões que simulavam login. Nenhum bypass ou role especial foi acrescentado. A tela antiga abre o navegador pela API Expo, em vez de `window.open` inexistente no Android.
+- Uma gravação SecureStore armazena o registro completo da sessão, evitando pares de tokens/perfil parcialmente atualizados. Escritas são serializadas; logout e mudanças de sessão invalidam resultados atrasados. Falha de armazenamento não publica nova identidade.
+- Migração local lê os tokens antigos e obtém a identidade por `/users/me`, ignorando perfil legado potencialmente desatualizado. O mesmo endpoint revalida a restauração antes de marcar a sessão autenticada. Sem validação disponível, permanece desautenticado; não se presume identidade a partir de dados locais. Isto exige rede na restauração; não é uma implementação de modo offline.
+- As três chaves antigas são removidas após persistência do registro novo. Downgrade para cliente antigo pode exigir novo login; a API pública não mudou. Não há migração de banco/infraestrutura.
+- Cache de saúde/perfil é limpo ao trocar conta ou sair; queries de perfil incluem userId. Respostas HTTP/perfil antigas não são entregues à nova conta. 401 de login/register/refresh não inicia refresh recursivo; refresh concorrente é compartilhado e não sobrescreve sessão nova. São correções necessárias às chamadas autenticadas, sem introduzir sid, nova família de refresh ou política backend de revogação.
+- Web mantém código funcional intacto: usa resposta plana, ID real e Bearer. Build/typecheck foram executados; os artefatos gerados não integram o diff.
 
-Comando equivalente ao novo job CI, executado localmente em `backend/`:
+## Validação final e contraprovas
+
+| Verificação | Resultado |
+|---|---|
+| Backend: unitários e APIs reais/JWT/SQLite temporário | **202 passaram**: 66 existentes + 13 da política + 123 API |
+| Matriz v1 | A/A e B/B nas 15 operações; A/B, B/A e A/inexistente: 45 negações genéricas, zero query/insert/provider e digest SQLite inalterado |
+| Contraprova independente anterior em master | Os mesmos **45 falharam**, reproduzindo inclusive feedback POST 201/GET 200 indevidos |
+| Contraprova Goldfish repetida na versão final | Os **45 falharam** ao substituir a política por retorno irrestrito do requested_id somente em cópia temporária |
+| Cliente Android — regressões reais dos serviços/store/interceptors | **22 passaram**: login, cadastro, chamadas próprias, rejeições, restauração/legado, cache, logout e concorrência/falha de refresh/storage |
+| Cliente Android + FastAPI real | **1 integração passou**: login A/B, cadastro C, identidade/Bearer reais, chamadas próprias e tentativas de ler/gravar A com sessão B |
+| Ruff — arquivos Python do pacote e script de contrato | Passou com regras explícitas iguais às configuradas no novo job |
+| ESLint — arquivos Android/testes alterados | Passou |
+| TypeScript Android e web | Passou |
+| Expo export Android | Bundle Hermes de produção gerado; não é APK/AAB assinado nem teste em emulador |
+| Next.js build web | Build de produção passou, incluindo typecheck e prerenderização |
+| OpenAPI contra master | Compatível nos critérios descritos acima |
+| `git diff --check` | Passou |
+
+Os 66 testes antigos não foram enfraquecidos. Os testes usam dados sintéticos e armazenamento efêmero; não acessam produção ou Google Fit/Garmin reais. O cliente da integração usa os mesmos módulos de produção, adaptando apenas transporte ASGI e SecureStore nativo. Não há override de autenticação no backend. Nenhuma credencial real foi usada ou versionada.
+
+Comandos reproduzíveis:
 
 ```sh
-ENVIRONMENT=local GOOGLE_CLIENT_ID=synthetic GOOGLE_CLIENT_SECRET=synthetic-ci \
-  ../.venv/bin/pytest -q --junitxml=/tmp/pkg01-results.xml
+# Na raiz, com dependências Python/Node instaladas:
+GOOGLE_CLIENT_ID=synthetic GOOGLE_CLIENT_SECRET=synthetic \
+  .venv/bin/pytest backend/tests --cov=backend/app --cov-report=term --cov-fail-under=30
+.venv/bin/python backend/scripts/check_v1_contract.py --base origin/master
+npm test --prefix mobile/vytal-app
+VYTAL_PYTHON="$PWD/.venv/bin/python" npm run test:api --prefix mobile/vytal-app
+npm run lint:pkg01 --prefix mobile/vytal-app
+npm run typecheck --prefix mobile/vytal-app
+CI=1 EXPO_NO_TELEMETRY=1 npm run build:android --prefix mobile/vytal-app
+# Em web/: npx tsc --noEmit --incremental false; npm run build
 ```
 
-Resultado: **202 passed**. O aviso existente de `asyncio_default_fixture_loop_scope` não foi alterado neste pacote. O workflow `account-isolation.yml` executa toda a suíte em PRs, em push desta branch e em master, com permissões de leitura e artefato JUnit; não aciona deploy. Execução remota/check obrigatório depende da configuração e acesso ao GitHub e não é declarada verificada por este resultado local.
+## Revisão final Goldfish
 
-OpenAPI comparado com o commit-base: **idêntico**, normalizando apenas a ordem dos parâmetros. `git diff --check` passou. Ruff: todos os arquivos novos de Python passaram; lint completo da aplicação passou de **102 para 98 diagnósticos preexistentes**, sem diagnósticos novos (comparação por arquivo, regra e mensagem). Não se alteraram regras nem se suprimiram falhas do CI existente.
+| Tema | Evidência / avaliação |
+|---|---|
+| Escopo acumulado do PR #8 | Resolvido na branch nova: base master + cherry-pick funcional + correções autorizadas; nenhum documento EGM ancestral adicional |
+| Autorização antes de efeitos | 15 operações revisadas no código; spies/digest e contraprova da política confirmam o contrato |
+| Identidade Android incorreta | Corrigida: resposta plana, sessão completa e conexão usando conta real; integração real passa |
+| Perfil/cache de outra conta | Corrigidos: consulta vinculada ao userId, cache limpo e rejeição de respostas atrasadas; regressões passam |
+| Refresh/login travado e troca de sessão | Corrigidos no cliente: refresh limitado, concorrente e vinculado à sessão original; regressões passam |
+| Contrato v1 / usuários legítimos | Fluxos próprios passam; inputs/security/respostas preservados; ID divergente nunca é compatibilizado por bypass |
+| Gates de CI | Workflow configurado com backend/API/OpenAPI/lint, cliente/integração/Android e build web. Resultado remoto precisa ser comprovado no SHA final; teste local não significa check remoto aprovado |
 
-## Compatibilidade e riscos residuais
+Não há bloqueador técnico local conhecido restante dentro deste recorte. A conclusão não é autoaprovação de merge. Se criação/consulta de PR continuar proibida pela rede, a entrega permanece bloqueada externamente até criar o draft e verificar seus checks.
 
-- Mantidos caminhos, corpos públicos, respostas próprias e códigos existentes de ausência de Bearer (403), JWT inválido (401) e state inválido (400). Identificadores divergentes passam a retornar 404 genérico intencionalmente. Clientes com IDs fixos ou IDs de outra sessão devem usar a conta autenticada; não recebem bypass.
-- Sem alterações em persistência, infraestrutura, fórmulas, Android ou web. Serviços internos continuam aceitando IDs explícitos; a fronteira HTTP e o OAuth são responsáveis pela autorização deste recorte. Novas rotas pessoais exigirão o mesmo guard.
-- Secrets default, revogação de access JWT, refresh concorrente, CORS e fluxo OAuth de navegador continuam itens separados. O callback v1 ainda requer Bearer. Este pacote não declara produção segura por si só.
-- `/dev/seed` permanece com o bloqueio de ambiente existente, sem ampliação ou bypass; não deve ser exposto em ambiente compartilhado configurado como desenvolvimento. Nenhum teste deste pacote usa essa rota.
-- SQLite local não comprova comportamento transacional de PostgreSQL/GCP; não houve migração nem teste contra produção. A nova revisão/PR deve avaliar as alterações antes de merge.
+Riscos residuais separados: secrets default/fail-closed, revogação backend/refresh transacional, CORS, callback browser OAuth v1 que continua exigindo Bearer, estado OAuth sem uso único/expiração e seed dependente de ambiente. Não foram ampliados nem são resolvidos por este pacote. Integração Google real, APK/AAB, testes em dispositivo/emulador, PostgreSQL/GCP e comportamento de produção não foram certificados. Não houve merge, deploy ou mudança da especificação de produto.

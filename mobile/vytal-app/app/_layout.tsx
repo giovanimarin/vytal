@@ -1,10 +1,10 @@
 import { Stack, useRouter, useSegments } from 'expo-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../src/store/authStore'
 
-const queryClient = new QueryClient()
+import { queryClient } from '../src/services/queryClient'
 
 // Screens that do not require authentication
 const PUBLIC_SEGMENTS = ['login', 'register', 'profile-setup']
@@ -17,10 +17,9 @@ function AuthGate() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    initFromStorage().then(() => {
-      const t = setTimeout(() => setReady(true), 100)
-      return () => clearTimeout(t)
-    })
+    let mounted = true
+    void initFromStorage().finally(() => { if (mounted) setReady(true) })
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {

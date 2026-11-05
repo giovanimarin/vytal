@@ -57,7 +57,7 @@ class OAuthService:
         try:
             user_id, nonce, signature = state.split(":")
         except ValueError:
-            raise ValueError("Invalid state format")
+            raise ValueError("Invalid state format") from None
 
         expected = hmac.new(
             settings.secret_key.encode(),

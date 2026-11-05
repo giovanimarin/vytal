@@ -19,14 +19,14 @@ async def get_readiness_history(user_id: AuthorizedAccountId, start_date: str, e
 
 
 @router.get("/{user_id}/advanced")
-async def get_advanced_metrics(user_id: AuthorizedAccountId, date: str = None):
+async def get_advanced_metrics(user_id: AuthorizedAccountId, date: str | None = None):
     """Retorna métricas avançadas: Social Jetlag, Recovery Curve e Signal Quality."""
     target_date = date if date is not None else str(_date.today())
     return await _advanced_service.calculate(user_id, target_date)
 
 
 @router.get("/{user_id}")
-async def get_readiness(user_id: AuthorizedAccountId, date: str = None):
+async def get_readiness(user_id: AuthorizedAccountId, date: str | None = None):
     """Retorna o Daily Readiness Score do dia (padrão: hoje)."""
     target_date = date if date is not None else str(_date.today())
 

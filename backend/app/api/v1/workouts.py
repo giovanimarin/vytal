@@ -1,5 +1,4 @@
 from datetime import date as _date
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
@@ -16,8 +15,8 @@ _recovery_service = MuscleRecoveryService()
 
 class ExerciseIn(BaseModel):
     name: str
-    sets: Optional[int] = None
-    reps: Optional[int] = None
+    sets: int | None = None
+    reps: int | None = None
 
 
 class WorkoutIn(BaseModel):
@@ -25,10 +24,10 @@ class WorkoutIn(BaseModel):
     modality: str = Field(..., description="crossfit|corrida|academia|tenis|pilates|surfe|yoga|ciclismo")
     intensity: str = Field(..., description="leve|moderado|intenso")
     duration_min: int = Field(..., gt=0)
-    date: Optional[str] = None
-    notes: Optional[str] = None
+    date: str | None = None
+    notes: str | None = None
     exercises: list[ExerciseIn] = []
-    free_text: Optional[str] = None
+    free_text: str | None = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

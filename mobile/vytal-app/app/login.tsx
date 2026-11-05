@@ -11,8 +11,7 @@ import {
   ScrollView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { api } from '../src/services/api'
-import { useAuthStore } from '../src/store/authStore'
+import { login, authErrorMessage } from '../src/services/auth'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -23,8 +22,6 @@ export default function LoginScreen() {
   const [passwordFocused, setPasswordFocused] = useState(false)
 
   const router = useRouter()
-  const setTokens = useAuthStore((s) => s.setTokens)
-  const setProfile = useAuthStore((s) => s.setProfile)
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -34,35 +31,14 @@ export default function LoginScreen() {
     setLoading(true)
     setErrorMsg(null)
     try {
-      const { data } = await api.post('/auth/login', { email: email.trim(), password })
-      setTokens(data.access_token, data.refresh_token)
-      if (data.user) {
-        setProfile({
-          user_id: data.user.user_id,
-          email: data.user.email,
-          name: data.user.name,
-          birth_date: data.user.birth_date ?? null,
-          weight_kg: data.user.weight_kg ?? null,
-          height_cm: data.user.height_cm ?? null,
-          goal: data.user.goal ?? null,
-        })
-      }
+      await login(email, password)
       router.replace('/(dashboard)')
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.detail || err?.message || 'Erro desconhecido'
+    } catch (err: unknown) {
+      const msg = authErrorMessage(err)
       setErrorMsg(`Não foi possível entrar: ${msg}`)
     } finally {
       setLoading(false)
     }
-  }
-
-  function handleTestMode() {
-    const setUserId = useAuthStore.getState().setUserId
-    const setConnected = useAuthStore.getState().setConnected
-    setUserId('user-mvp-1')
-    setConnected(true)
-    router.replace('/(dashboard)')
   }
 
   return (
@@ -155,9 +131,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Test mode */}
-        <TouchableOpacity style={styles.testModeButton} onPress={handleTestMode} activeOpacity={0.7}>
-          <Text style={styles.testModeText}>Modo de teste</Text>
-        </TouchableOpacity>
+
       </ScrollView>
     </KeyboardAvoidingView>
   )
