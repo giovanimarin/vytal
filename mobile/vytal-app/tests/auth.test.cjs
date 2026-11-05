@@ -357,3 +357,16 @@ test('session refresh coordinator shares failure and permits a later independent
   await assert.rejects(renew('session-B', action))
   assert.equal(count, 2)
 })
+
+test('queued renewal cannot send an old refresh after logout', async () => {
+  const { refreshSession } = require('../src/services/api.ts')
+  await seed('A'); let sent = 0
+  api.defaults.adapter = async (config) => {
+    sent++; return ok(config, { access_token: 'old-access', refresh_token: 'old-refresh' })
+  }
+  const pending = refreshSession()
+  const rejected = assert.rejects(pending, /sessão mudou/)
+  state().logout()
+  await rejected
+  assert.equal(sent, 0)
+})

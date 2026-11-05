@@ -37,7 +37,7 @@ api.interceptors.request.use((config: SessionRequest) => {
   return config
 })
 
-async function refreshSession(): Promise<void> {
+export async function refreshSession(): Promise<void> {
   const previous = useAuthStore.getState()
   if (!previous.accessToken || !previous.refreshToken) {
     previous.logout()
@@ -46,6 +46,8 @@ async function refreshSession(): Promise<void> {
   const version = getSessionVersion()
   return renewOnce(`${version}:${previous.accessToken}`, async () => {
     try {
+      if (getSessionVersion() !== version || useAuthStore.getState().accessToken !== previous.accessToken
+          || useAuthStore.getState().refreshToken !== previous.refreshToken) throw new Error('A sessão mudou.')
       // Auth endpoints never recursively refresh, including a rejected refresh.
       const { data } = await api.post('/auth/refresh', { refresh_token: previous.refreshToken })
       const current = useAuthStore.getState()

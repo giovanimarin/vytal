@@ -192,3 +192,16 @@ test('a definitive profile authentication failure cannot be reported as successf
   await assert.rejects(login('A@example.invalid', 'synthetic'), /sessão mudou/)
   assert.equal(renewals, 1); assert.equal(state().userId, null)
 })
+
+test('queued renewal cannot send an old refresh after logout', async () => {
+  const { refreshSession } = require('../lib/api.ts')
+  seed(); let sent = 0
+  api.defaults.adapter = async (config) => {
+    sent++; return ok(config, { access_token: 'old-access', refresh_token: 'old-refresh' })
+  }
+  const pending = refreshSession()
+  const rejected = assert.rejects(pending, /sessão mudou/)
+  state().clear()
+  await rejected
+  assert.equal(sent, 0)
+})

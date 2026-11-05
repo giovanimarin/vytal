@@ -19,7 +19,7 @@ Não se alteraram os 202 testes de backend nem as assertions antigas do PKG-01 p
 | Login/cadastro/refresh/logout retorna 401 | Não inicia refresh dentro desses endpoints. Login inválido não encerra uma sessão posterior ou outra conta |
 | Primeiro 401 de recurso próprio | Se houver credenciais da mesma sessão, um refresh compartilhado; cada requisição original pode ser repetida uma única vez |
 | Concorrência na mesma sessão | Um refresh em andamento por sessão/credencial no cliente. Backend faz substituição condicional atômica, com exatamente um consumidor aceito por refresh |
-| Resposta/refresh atrasado após logout/login, inclusive mesma conta | Rejeitado por versão de sessão; não entrega dados/cache nem instala credenciais antigas |
+| Resposta/refresh atrasado após logout/login, inclusive mesma conta | Rejeitado por versão de sessão, inclusive antes de enviar uma renovação enfileirada; não entrega dados/cache nem instala credenciais antigas |
 | Segundo 401 após retry, refresh ausente, recusado, resposta malformada, falha de rede ou 5xx durante refresh | Rejeita os aguardantes e limpa apenas a sessão correspondente. Não tenta novamente automaticamente: resultado de rotação pode ser incerto |
 | Rede/5xx em requisição ordinária, sem 401 | Rejeita a requisição e preserva as credenciais válidas; não inicia refresh |
 | Logout explícito | Limpa estado/cache imediatamente; tenta revogar o refresh capturado sem reinstalar estado em caso de falha/rede indisponível |
@@ -39,8 +39,8 @@ O timeout HTTP existente de 15s foi mantido. Não se criaram TTLs, tolerâncias 
 ## Validação local
 
 - **211 testes backend** passaram; cobertura **74,95%**, acima do gate existente de 30%. Incluem 9 casos novos de rotação, concorrência entre repositórios, replay/logout, usuário inexistente, refresh expirado/revogado/owner errado e falha de armazenamento.
-- **31 testes Android** passaram, mantendo os antigos e cobrindo retry máximo, credencial ausente, rede/5xx/malformed, mesma conta após logout, cancelamento de sessão, logout remoto e coordenador isolado.
-- **19 testes web** passaram, incluindo concorrência, rede, retry máximo, persistência limpa, refresh só em memória, login tardio e preferências entre contas.
+- **32 testes Android** passaram, mantendo os antigos e cobrindo retry máximo, credencial ausente, rede/5xx/malformed, mesma conta após logout, cancelamento de sessão, logout remoto e coordenador isolado.
+- **20 testes web** passaram, incluindo concorrência, rede, retry máximo, persistência limpa, refresh só em memória, login tardio e preferências entre contas.
 - **1 integração cliente Android real + FastAPI/JWT/SQLite** passou, ampliada para recuperação concorrente de access inválido, replay de refresh e revogação por logout, além do isolamento A/B original.
 - Instalação web limpa com npm ci/Node 22, typechecks, Ruff dos arquivos Python alterados, ESLint Android, contrato OpenAPI, bundle Android/Hermes e build Next.js passaram. Não se gerou/certificou APK/AAB nem se testou dispositivo.
 - Workflow existente ampliado para a nova branch, testes web e lint dos componentes backend afetados; resultados remotos devem ser verificados no SHA publicado, sem inferência a partir dos testes locais.
