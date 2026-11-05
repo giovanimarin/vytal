@@ -1,0 +1,33 @@
+name: Account isolation regression
+
+on:
+  pull_request:
+  push:
+    branches: [fix/pkg-01-account-isolation, master]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r backend/requirements.txt
+      - name: Existing unit suite and real API account isolation regressions
+        working-directory: backend
+        run: pytest -q --junitxml=test-results.xml
+        env:
+          ENVIRONMENT: local
+          GOOGLE_CLIENT_ID: synthetic-ci
+          GOOGLE_CLIENT_SECRET: synthetic-ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-regression-results
+          path: backend/test-results.xml
