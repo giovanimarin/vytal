@@ -27,7 +27,8 @@ class TokenRepository:
         return OAuthToken(
             access_token=r["access_token"],
             refresh_token=r["refresh_token"],
-            expires_at=datetime.fromisoformat(r["expires_at"]),
+            expires_at=(r["expires_at"] if isinstance(r["expires_at"], datetime)
+                        else datetime.fromisoformat(r["expires_at"])),
             provider=r["provider"],
             user_id=r["user_id"],
         )

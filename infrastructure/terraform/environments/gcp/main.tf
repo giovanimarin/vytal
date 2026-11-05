@@ -49,9 +49,9 @@ module "cloud_run" {
   image      = var.backend_image
 
   env_vars = {
-    ENVIRONMENT          = "production"
-    CONFIG_PATH          = "/app/config.yaml"
-    GOOGLE_REDIRECT_URI  = "https://${var.backend_domain}/api/v1/connect/google_fit/callback"
+    ENVIRONMENT         = "production"
+    CONFIG_PATH         = "/app/config.yaml"
+    GOOGLE_REDIRECT_URI = "https://${var.backend_domain}/api/v1/connect/google_fit/callback"
   }
 
   secret_vars = {
@@ -65,15 +65,21 @@ module "cloud_run" {
 
 resource "google_secret_manager_secret" "google_client_id" {
   secret_id = "vytal-google-client-id-${var.env}"
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret" "google_client_secret" {
   secret_id = "vytal-google-client-secret-${var.env}"
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret" "secret_key" {
   secret_id = "vytal-secret-key-${var.env}"
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
