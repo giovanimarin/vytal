@@ -3,6 +3,7 @@ from datetime import date as _date
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.auth.dependencies import AuthorizedAccountId
 from app.repositories.user_repo import UserRepository
 from app.services.readiness_modality_service import ReadinessModalityService
 
@@ -12,7 +13,7 @@ _user_repo = UserRepository()
 
 
 @router.get("/{user_id}")
-async def get_modality_readiness(user_id: str, date: str = None):
+async def get_modality_readiness(user_id: AuthorizedAccountId, date: str = None):
     """Score de readiness 0–100 pelas modalidades preferidas do usuário."""
     target_date = date if date is not None else str(_date.today())
 
