@@ -49,12 +49,18 @@ export const useAuthStore = create<AuthState>()(
         }))
       },
       clear: () => {
+        // Zustand updates memory before its persistence write. Storage denial must
+        // not leave the previous account active or block the logout transition.
+        let persistenceFailed = false
+        try {
+          set((s) => ({ userId: null, email: null, name: null, gender: null,
+            preferredModalities: [], accessToken: null, refreshToken: null, sessionVersion: s.sessionVersion + 1 }))
+        } catch { persistenceFailed = true }
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('user_id')
+          for (const key of ['access_token', 'user_id', ...(persistenceFailed ? ['vytal-auth'] : [])]) {
+            try { localStorage.removeItem(key) } catch { /* Memory is already signed out. */ }
+          }
         }
-        set((s) => ({ userId: null, email: null, name: null, gender: null,
-          preferredModalities: [], accessToken: null, refreshToken: null, sessionVersion: s.sessionVersion + 1 }))
       },
     }),
     { name: 'vytal-auth', // Do not add a persistent long-lived bearer credential to browser storage.

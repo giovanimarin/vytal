@@ -205,3 +205,17 @@ test('queued renewal cannot send an old refresh after logout', async () => {
   await rejected
   assert.equal(sent, 0)
 })
+
+test('storage failures cannot prevent clearing the in-memory authenticated session', () => {
+  seed()
+  const originalSet = localStorage.setItem, originalRemove = localStorage.removeItem
+  localStorage.setItem = () => { throw new Error('Synthetic storage denied') }
+  localStorage.removeItem = () => { throw new Error('Synthetic storage denied') }
+  try {
+    assert.doesNotThrow(() => state().clear())
+    assert.equal(state().userId, null)
+    assert.equal(state().accessToken, null)
+  } finally {
+    localStorage.setItem = originalSet; localStorage.removeItem = originalRemove
+  }
+})

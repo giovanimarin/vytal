@@ -33,14 +33,14 @@ O timeout HTTP existente de 15s foi mantido. Não se criaram TTLs, tolerâncias 
 - `execute_affected` expõe contagem de linhas comprometidas: SQLite real e implementação BigQuery com parâmetros vinculados. GCP foi testado com SDK/client simulados, não com serviço real; o pacote não certifica autenticação operacional GCP.
 - `sessionRefresh.ts` em cada aplicação isola a promessa compartilhada, sem dependência entre empacotadores Android/Next. Adaptadores HTTP tratam status e versão da sessão; refresh nunca intercepta a si mesmo.
 - Android usa a geração local já existente também no transporte, impedindo respostas anteriores a logout/login da mesma conta. Logout da UI deixa de esperar a animação para remover credenciais.
-- Web passa o refresh retornado pelo backend ao estado **apenas em memória**, preservando a persistência existente de access. Limpa o Zustand persistido e aliases locais ao sair; descarta preferências de outra conta. Cache é limpo na mudança da sessão; perfil inclui userId na query key. Login/seed tardios não restauram sessão encerrada.
+- Web passa o refresh retornado pelo backend ao estado **apenas em memória**, preservando a persistência existente de access. Limpa memória mesmo se o armazenamento negar escrita; limpa o Zustand persistido e aliases locais ao sair quando o navegador permite; descarta preferências de outra conta. Cache é limpo na mudança da sessão; perfil inclui userId na query key. Login/seed tardios não restauram sessão encerrada.
 - Cache/credenciais não substituem autorização backend: toda a matriz PKG-01 continua executando. O OpenAPI v1 permanece compatível com master.
 
 ## Validação local
 
 - **211 testes backend** passaram; cobertura **74,95%**, acima do gate existente de 30%. Incluem 9 casos novos de rotação, concorrência entre repositórios, replay/logout, usuário inexistente, refresh expirado/revogado/owner errado e falha de armazenamento.
 - **32 testes Android** passaram, mantendo os antigos e cobrindo retry máximo, credencial ausente, rede/5xx/malformed, mesma conta após logout, cancelamento de sessão, logout remoto e coordenador isolado.
-- **20 testes web** passaram, incluindo concorrência, rede, retry máximo, persistência limpa, refresh só em memória, login tardio e preferências entre contas.
+- **21 testes web** passaram, incluindo concorrência, rede, retry máximo, persistência limpa, refresh só em memória, login tardio e preferências entre contas.
 - **1 integração cliente Android real + FastAPI/JWT/SQLite** passou, ampliada para recuperação concorrente de access inválido, replay de refresh e revogação por logout, além do isolamento A/B original.
 - Instalação web limpa com npm ci/Node 22, typechecks, Ruff dos arquivos Python alterados, ESLint Android, contrato OpenAPI, bundle Android/Hermes e build Next.js passaram. Não se gerou/certificou APK/AAB nem se testou dispositivo.
 - Workflow existente ampliado para a nova branch, testes web e lint dos componentes backend afetados; resultados remotos devem ser verificados no SHA publicado, sem inferência a partir dos testes locais.
