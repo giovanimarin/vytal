@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 
@@ -31,7 +31,7 @@ class AuthService:
         await wh.insert("dim_user", [{
             "user_id": user["user_id"],
             "provider": "email",
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }])
         access_token = create_access_token(user["user_id"], user["email"])
         refresh_token = await self.token_repo.create(user["user_id"])
@@ -75,9 +75,11 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuário não encontrado",
             )
-        await self.token_repo.revoke(raw_refresh_token)
         access_token = create_access_token(user["user_id"], user["email"])
-        new_refresh_token = await self.token_repo.create(user["user_id"])
+        new_refresh_token = await self.token_repo.rotate(raw_refresh_token, user["user_id"])
+        if not new_refresh_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail="Refresh token inválido ou expirado")
         return {
             "access_token": access_token,
             "refresh_token": new_refresh_token,

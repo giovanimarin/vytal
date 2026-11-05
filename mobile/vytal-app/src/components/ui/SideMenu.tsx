@@ -8,7 +8,8 @@ import {
   Animated,
   TouchableWithoutFeedback,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
+import { logout } from '../../services/auth'
 import { useAuthStore } from '../../store/authStore'
 
 const MENU_WIDTH = 280
@@ -20,7 +21,6 @@ interface Props {
 
 export function SideMenu({ visible, onClose }: Props) {
   const router = useRouter()
-  const logout = useAuthStore((s) => s.logout)
   const userName = useAuthStore((s) => s.userProfile?.name)
   const userEmail = useAuthStore((s) => s.userProfile?.email)
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current
@@ -36,13 +36,13 @@ export function SideMenu({ visible, onClose }: Props) {
   function navigate(path: string) {
     onClose()
     // Small delay so close animation plays before navigation
-    setTimeout(() => router.push(path as any), 200)
+    setTimeout(() => router.push(path as Href), 200)
   }
 
   function handleSignOut() {
     onClose()
+    logout()
     setTimeout(() => {
-      logout()
       router.replace('/login')
     }, 200)
   }

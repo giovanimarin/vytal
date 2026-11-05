@@ -47,6 +47,7 @@ const signedOut = {
   userId: null, isAuthenticated: false, isConnected: false,
 }
 let generation = 0
+export const getSessionVersion = () => generation
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   ...signedOut,

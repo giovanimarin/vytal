@@ -9,7 +9,10 @@ interface AuthState {
   gender: string | null
   preferredModalities: string[]
   accessToken: string | null
-  setAuth: (userId: string, email: string, name: string, token: string) => void
+  refreshToken: string | null
+  sessionVersion: number
+  setAuth: (userId: string, email: string, name: string, token: string, refresh?: string) => void
+  setTokens: (token: string, refresh: string) => void
   setProfile: (profile: { gender?: string | null; preferredModalities?: string[] }) => void
   clear: () => void
 }
@@ -23,12 +26,21 @@ export const useAuthStore = create<AuthState>()(
       gender: null,
       preferredModalities: [],
       accessToken: null,
-      setAuth: (userId, email, name, accessToken) => {
+      refreshToken: null,
+      sessionVersion: 0,
+      setAuth: (userId, email, name, accessToken, refreshToken) => {
+        if (!userId?.trim() || !accessToken?.trim() || !email?.trim()) throw new Error('Sessão inválida.')
         if (typeof window !== 'undefined') {
           localStorage.setItem('access_token', accessToken)
           localStorage.setItem('user_id', userId)
         }
-        set({ userId, email, name, accessToken })
+        set((s) => ({ userId, email, name, accessToken, refreshToken: refreshToken || null,
+          gender: null, preferredModalities: [], sessionVersion: s.sessionVersion + 1 }))
+      },
+      setTokens: (accessToken, refreshToken) => {
+        if (!accessToken?.trim() || !refreshToken?.trim()) throw new Error('Sessão inválida.')
+        if (typeof window !== 'undefined') localStorage.setItem('access_token', accessToken)
+        set({ accessToken, refreshToken })
       },
       setProfile: ({ gender, preferredModalities }) => {
         set((s) => ({
@@ -41,9 +53,11 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('access_token')
           localStorage.removeItem('user_id')
         }
-        set({ userId: null, email: null, name: null, gender: null, preferredModalities: [], accessToken: null })
+        set((s) => ({ userId: null, email: null, name: null, gender: null,
+          preferredModalities: [], accessToken: null, refreshToken: null, sessionVersion: s.sessionVersion + 1 }))
       },
     }),
-    { name: 'vytal-auth' }
+    { name: 'vytal-auth', // Do not add a persistent long-lived bearer credential to browser storage.
+      partialize: ({ sessionVersion: _version, refreshToken: _refresh, ...persisted }) => persisted }
   )
 )

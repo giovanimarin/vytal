@@ -8,7 +8,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from app.adapters.cloud.base import StorageProvider, WarehouseProvider, PipelineProvider
+from app.adapters.cloud.base import PipelineProvider, StorageProvider, WarehouseProvider
 from app.config.cloud_config import LocalConfig
 
 # DDL das tabelas do warehouse local (espelha o modelo de dados)
@@ -210,7 +210,7 @@ class LocalStorageProvider(StorageProvider):
         self.base = Path(config.data_dir)
         self.base.mkdir(parents=True, exist_ok=True)
 
-    async def upload(self, path: str, data: bytes, content_type: str = None) -> str:
+    async def upload(self, path: str, data: bytes, content_type: str | None = None) -> str:
         full = self.base / path
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_bytes(data)
@@ -264,6 +264,12 @@ class LocalWarehouseProvider(WarehouseProvider):
             rows = await cursor.fetchall()
             await db.commit()
             return [dict(row) for row in rows]
+
+    async def execute_affected(self, sql: str, params: dict) -> int:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(sql, params)
+            await db.commit()
+            return cursor.rowcount
 
 
 class LocalPipelineProvider(PipelineProvider):

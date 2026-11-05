@@ -1,12 +1,10 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/api'
-import { useAuthStore } from '@/lib/store'
+import { login, seedDemo } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setAuth, setProfile } = useAuthStore()
   const [email, setEmail] = useState('demo@vytal.app')
   const [password, setPassword] = useState('demo1234')
   const [error, setError] = useState('')
@@ -17,15 +15,9 @@ export default function LoginPage() {
     setSeeding(true)
     setError('')
     try {
-      const { data } = await api.post('/dev/seed')
+      const data = await seedDemo()
       setEmail(data.email)
-      setPassword(data.password)
-      setAuth(data.user_id, data.email, 'Demo User', data.access_token)
-      // load profile fields after auth token is set
-      try {
-        const { data: me } = await api.get('/users/me', { headers: { Authorization: `Bearer ${data.access_token}` } })
-        setProfile({ gender: me.gender, preferredModalities: me.preferred_modalities ?? [] })
-      } catch {}
+      setPassword(data.password ?? '')
       router.replace('/dashboard')
     } catch {
       setError('Falha ao criar dados demo. O backend está rodando?')
@@ -39,12 +31,7 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const { data } = await api.post('/auth/login', { email, password })
-      setAuth(data.user_id, data.email, data.name || 'Usuário', data.access_token)
-      try {
-        const { data: me } = await api.get('/users/me', { headers: { Authorization: `Bearer ${data.access_token}` } })
-        setProfile({ gender: me.gender, preferredModalities: me.preferred_modalities ?? [] })
-      } catch {}
+      await login(email, password)
       router.replace('/dashboard')
     } catch {
       setError('Email ou senha inválidos.')

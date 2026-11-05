@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class StorageProvider(ABC):
     @abstractmethod
-    async def upload(self, path: str, data: bytes, content_type: str = None) -> str:
+    async def upload(self, path: str, data: bytes, content_type: str | None = None) -> str:
         """Persiste o objeto e retorna sua URI."""
 
     @abstractmethod
@@ -25,8 +25,13 @@ class WarehouseProvider(ABC):
         """Insere rows e retorna quantidade inserida."""
 
     @abstractmethod
-    async def query(self, sql: str, params: dict = None) -> list[dict]:
+    async def query(self, sql: str, params: dict | None = None) -> list[dict]:
         pass
+
+    @abstractmethod
+    async def execute_affected(self, sql: str, params: dict) -> int:
+        """Execute one conditional DML statement and return committed affected rows."""
+
 
 
 class PipelineProvider(ABC):
