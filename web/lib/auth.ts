@@ -5,7 +5,7 @@ interface AuthResponse {
   user_id: string; email: string; name?: string
   access_token: string; refresh_token: string; password?: string
 }
-async function authenticate(url: string, body?: { email: string; password: string }) {
+async function authenticate(url: string, body?: { email: string; password: string; name?: string }) {
   const version = useAuthStore.getState().sessionVersion
   const { data } = await api.post<AuthResponse>(url, body)
   if (useAuthStore.getState().sessionVersion !== version) throw new Error('A sessão mudou.')
@@ -23,6 +23,7 @@ async function authenticate(url: string, body?: { email: string; password: strin
   return data
 }
 export const login = (email: string, password: string) => authenticate('/auth/login', { email, password })
+export const register = (name: string, email: string, password: string) => authenticate('/auth/register', { name, email, password })
 export const seedDemo = () => authenticate('/dev/seed')
 export function logout() {
   const refresh = useAuthStore.getState().refreshToken

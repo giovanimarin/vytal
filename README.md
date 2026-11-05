@@ -74,6 +74,9 @@ Vytal/
 
 ## Local Setup
 
+Para executar o MVP completo com SQLite, web e Android, veja [o guia local](docs/LOCAL-MVP.md) e [as evidências E2E](docs/MVP-LOCAL-REPORT.md). O launcher mantém portas/configuração consistentes e oferece dados sintéticos por conta.
+
+
 ### Prerequisites
 
 - Python 3.11+

@@ -10,8 +10,14 @@ import sqlite3
 import sys
 import uuid
 from contextlib import ExitStack
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import AsyncMock, Mock, patch
+
+
+class Day(date):
+    @classmethod
+    def today(cls):
+        return cls(2026, 1, 15)
 
 
 class Clock(datetime):
@@ -60,6 +66,7 @@ def main():
         stack.enter_context(patch("app.services.oauth_service.get_connector", return_value=connector))
         stack.enter_context(patch("app.services.health_data_service.get_connector", return_value=connector))
         stack.enter_context(patch.object(socket.socket, "connect", side_effect=AssertionError("Network forbidden")))
+        stack.enter_context(patch("app.api.v1.workouts._date", Day))
         client = stack.enter_context(TestClient(app, raise_server_exceptions=False))
         actors = {}
         for name in ("A", "B"):

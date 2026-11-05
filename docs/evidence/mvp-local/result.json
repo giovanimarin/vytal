@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": [
+    "web-registration",
+    "web-session-persistence-profile-read",
+    "web-profile-update",
+    "local-health-simulation-real-normalization-persistence",
+    "web-readiness-insights-history-feedback",
+    "web-metrics-page",
+    "web-workout-create-history",
+    "workout-null-date-regression",
+    "web-recovery-page-and-api",
+    "web-logout-and-login",
+    "two-browser-contexts-account-isolation"
+  ],
+  "cloud_calls": 0,
+  "android_ui_validated": false,
+  "web_validation": "automated real Chromium UI, not human manual",
+  "screenshots": 4
+}

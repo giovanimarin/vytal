@@ -42,7 +42,14 @@ async def register_workout(body: WorkoutIn, current_user: AuthenticatedUser):
     if body.intensity not in valid_intensities:
         raise HTTPException(status_code=400, detail=f"Intensidade inválida: {body.intensity}")
 
+    workout_date = body.date if body.date is not None else str(_date.today())
+    try:
+        _date.fromisoformat(workout_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid workout date. Use YYYY-MM-DD.") from None
+
     payload = body.model_dump()
+    payload["date"] = workout_date
     payload["user_id"] = account_id
     exercises_raw = [e.model_dump() for e in body.exercises]
     payload["exercises"] = exercises_raw
@@ -50,7 +57,6 @@ async def register_workout(body: WorkoutIn, current_user: AuthenticatedUser):
     workout = await _workout_service.register(account_id, payload)
 
     # Recalcula recuperação muscular após novo treino
-    workout_date = body.date or str(_date.today())
     await _recovery_service.calculate(account_id, workout_date)
 
     return workout

@@ -115,12 +115,25 @@ def test_workout_rejects_invalid_inputs(api, field, value, status):
     assert api("POST", "/workouts", body=body)["status"] == status
 
 
-def test_workout_null_date_current_server_error_is_characterized(api):
+@pytest.mark.parametrize("omitted", [False, True])
+def test_workout_null_or_missing_date_defaults_to_today(api, omitted):
     body = workout()
-    body["date"] = None
-    # Existing mismatch: schema permits null but persistence requires date NOT NULL.
-    # T01 records it; fixing this requires a separate authorized behavior change.
-    assert api("POST", "/workouts", body=body)["status"] == 500
+    if omitted:
+        body.pop("date")
+    else:
+        body["date"] = None
+    response = api("POST", "/workouts", body=body)
+    assert response["status"] == 201 and response["body"]["date"] == DAY
+    history = api("GET", f"/workouts/{{A}}?start_date={DAY}&end_date={DAY}")
+    assert len(history["body"]) == 1 and history["body"][0]["date"] == DAY
+
+
+@pytest.mark.parametrize("bad_date", ["invalid", "2026-02-30", ""])
+def test_invalid_workout_date_is_rejected_before_persistence(api, bad_date):
+    body = workout()
+    body["date"] = bad_date
+    assert api("POST", "/workouts", body=body)["status"] == 400
+    assert api("GET", f"/workouts/{{A}}?start_date={DAY}&end_date={DAY}")["body"] == []
 
 
 def test_health_ingestion_readiness_history_and_advanced(api):
