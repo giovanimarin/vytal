@@ -100,7 +100,8 @@ jobs:
           EXPO_NO_TELEMETRY: '1'
 
   web-build:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 supports Ubuntu 24.04; ubuntu-latest may use Ubuntu 26.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: web

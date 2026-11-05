@@ -90,3 +90,31 @@ async def test_demo_refuses_unprocessed_non_demo_raw_events(warehouse):
     with pytest.raises(ValueError, match="refuses to mix"):
         await seed_account("A@example.invalid", date(2026, 1, 15), 1)
     assert await warehouse.query("SELECT * FROM normalized_sleep") == []
+
+
+@pytest.mark.parametrize("component", ["backend", "web", "android"])
+def test_launcher_command_ports_and_offline_android_are_reproducible(monkeypatch, tmp_path, component):
+    from unittest.mock import Mock
+
+    executable = tmp_path / "python"
+    executable.touch()
+    monkeypatch.setattr(launcher, "ROOT", tmp_path)
+    monkeypatch.setattr(launcher, "python_path", lambda: executable)
+    monkeypatch.setattr(launcher, "local_environment", lambda: {"ENVIRONMENT": "local"})
+    monkeypatch.setattr(launcher.shutil, "which", lambda _: "npm")
+    monkeypatch.setattr(launcher.sys, "argv", ["local.py", component])
+    run = Mock()
+    monkeypatch.setattr(launcher.subprocess, "run", run)
+    launcher.main()
+    command = run.call_args.args[0]
+    env = run.call_args.kwargs["env"]
+    if component == "backend":
+        assert command[-4:] == ["--host", "127.0.0.1", "--port", "8000"]
+    elif component == "web":
+        assert command == ["npm", "run", "dev"]
+        assert env["VYTAL_BACKEND_URL"] == "http://127.0.0.1:8000"
+        assert env["NEXT_TELEMETRY_DISABLED"] == "1"
+    else:
+        assert command == ["npm", "start", "--", "--go", "--localhost"]
+        assert env["EXPO_OFFLINE"] == "1"
+        assert env["EXPO_PUBLIC_API_URL"] == "http://10.0.2.2:8000/api/v1"

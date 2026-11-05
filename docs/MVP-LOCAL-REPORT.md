@@ -57,7 +57,7 @@ Nenhuma migração, unidade de trabalho PostgreSQL ou correção incidental de s
 
 ## Testes e verificações
 
-- Backend: **432 passed**, cobertura **84,24%** (antes: 418). Incremento de 14 casos: regressões de datas e testes do launcher/geração demo. Nenhum teste anterior enfraquecido para acomodar implementação.
+- Backend: **435 passed**, cobertura **84,24%** (antes: 418). Incremento de 17 casos: regressões de datas e testes do launcher/geração demo. Nenhum teste anterior enfraquecido para acomodar implementação.
 - Web: **43 testes passed** (22 auth, 21 config), mais **11 checkpoints E2E** em Chromium/servidores reais. Cadastro tem teste de contrato; hidratação e feedback são cobertos na automação UI.
 - Android: **52 testes passed + 1 integração API**, scoped ESLint, typecheck e export Hermes passaram. Nenhuma alegação de teste manual nativo.
 - Web: instalação limpa **npm ci**, TypeScript e build Next de produção passaram com Node 22/npm 10, endpoint HTTPS sintético. Artefatos de build não são deploy.
@@ -74,3 +74,5 @@ Nenhuma migração, unidade de trabalho PostgreSQL ou correção incidental de s
 - Compose legado e Windows não executados. Não foram corrigidos como arquitetura de deploy; o caminho validado é launcher Python sem Docker.
 
 **Critério de testabilidade:** usar backend/web para avaliação manual local seguindo o guia; manter a aprovação do MVP completo condicionada ao roteiro nativo Android e às lacunas explicitadas. Não promover este PR como deploy ou homologação de produção.
+
+Nota de CI: a primeira execução remota aprovou backend/Android e falhou antes do E2E na instalação do Chromium em ubuntu-latest, durante a migração anunciada para Ubuntu 26. O job web foi fixado em Ubuntu 24.04, suportado pelo Playwright utilizado, sem retirar testes ou mudar configuração da aplicação. Resultado definitivo é o do SHA final reportado no PR.
