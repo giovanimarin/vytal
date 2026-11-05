@@ -9,12 +9,18 @@ resource "google_storage_bucket" "raw" {
 
   lifecycle_rule {
     condition { age = 90 }
-    action    { type = "SetStorageClass"; storage_class = "NEARLINE" }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
   }
 
   lifecycle_rule {
     condition { age = 365 }
-    action    { type = "SetStorageClass"; storage_class = "COLDLINE" }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "COLDLINE"
+    }
   }
 
   uniform_bucket_level_access = true
