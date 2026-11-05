@@ -1,0 +1,68 @@
+name: Open draft PR for agent branches
+
+on:
+  push:
+    branches:
+      - 'fix/pkg-*'
+      - 'codex/**'
+  workflow_dispatch:
+    inputs:
+      head:
+        description: 'Existing agent branch to propose (fix/pkg-* or codex/*)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: auto-pr-${{ github.event_name == 'workflow_dispatch' && inputs.head || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  open-draft-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open draft PR if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BRANCH: ${{ github.ref_name }}
+          INPUT_BRANCH: ${{ inputs.head }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            branch="$INPUT_BRANCH"
+          else
+            branch="$PUSH_BRANCH"
+          fi
+
+          if [[ ! "$branch" =~ ^fix/pkg-[a-zA-Z0-9._/-]+$ && ! "$branch" =~ ^codex/[a-zA-Z0-9._/-]+$ ]]; then
+            echo "::error::Branch is not in an approved agent namespace: $branch"
+            exit 1
+          fi
+
+          # Reject ref ambiguity and ensure branch exists in this repository.
+          gh api "repos/$GH_REPO/branches/$branch" --silent
+
+          existing="$(gh pr list --repo "$GH_REPO" --head "$branch" --state all --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "PR #$existing already exists for $branch; skipping."
+            exit 0
+          fi
+
+          if ! gh api "repos/$GH_REPO/compare/master...$branch" --jq '.ahead_by' | grep -Eq '^[1-9][0-9]*$'; then
+            echo "Branch has no commits ahead of master; skipping."
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$GH_REPO" \
+            --base master \
+            --head "$branch" \
+            --draft \
+            --title "chore(agent): review $branch" \
+            --body "Automated draft PR for agent branch \`$branch\`.\n\nReview scope, CI and linked issue before approving. No automatic merge or deployment."
