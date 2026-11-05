@@ -30,7 +30,7 @@ O timeout HTTP existente de 15s foi mantido. Não se criaram TTLs, tolerâncias 
 ## Implementação e compatibilidade
 
 - Repositório troca hash e timestamps do refresh na **mesma linha existente e em um único UPDATE condicional** por hash anterior, usuário, expiração e não revogação. Não há janela de revogar sem instalar substituto nem dois vencedores. IDs internos não são contratos públicos; payloads/paths/status v1 permanecem.
-- `execute_affected` expõe contagem de linhas comprometidas: SQLite real e implementação BigQuery com parâmetros vinculados. GCP foi testado com SDK/client simulados, não com serviço real; o pacote não certifica autenticação operacional GCP.
+- `execute_affected` expõe contagem de linhas comprometidas: SQLite real e implementação BigQuery com parâmetros vinculados. Após a revisão BigQuery, o SDK real valida a serialização e apenas client/jobs são simulados, sem serviço real; o pacote não certifica autenticação operacional GCP.
 - `sessionRefresh.ts` em cada aplicação isola a promessa compartilhada, sem dependência entre empacotadores Android/Next. Adaptadores HTTP tratam status e versão da sessão; refresh nunca intercepta a si mesmo.
 - Android usa a geração local já existente também no transporte, impedindo respostas anteriores a logout/login da mesma conta. Logout da UI deixa de esperar a animação para remover credenciais.
 - Web passa o refresh retornado pelo backend ao estado **apenas em memória**, preservando a persistência existente de access. Limpa memória mesmo se o armazenamento negar escrita; limpa o Zustand persistido e aliases locais ao sair quando o navegador permite; descarta preferências de outra conta. Cache é limpo na mudança da sessão; perfil inclui userId na query key. Login/seed tardios não restauram sessão encerrada.
@@ -48,3 +48,17 @@ O timeout HTTP existente de 15s foi mantido. Não se criaram TTLs, tolerâncias 
 ## Limitações explícitas
 
 Logout offline garante remoção local e rejeição de respostas antigas; revogação remota depende da entrega da chamada. JWT access emitido anteriormente continua com seu vencimento existente: revogação instantânea de access JWT/dispositivos exige contrato próprio e não foi anunciada como implementada. A coordenação de refresh é por instância de aplicação; múltiplos clientes concorrentes são arbitrados pelo consumo único backend, sem janela de replay nem promessa de sessão compartilhada entre abas. Falha definitiva exige reautenticação. Secrets default, fontes OAuth, PostgreSQL/GCP de produção e demais requisitos do Elephant continuam fora deste PR.
+
+## Correção da revisão BigQuery no PR #11
+
+`query()` e `execute_affected()` agora usam a mesma preparação de SQL e `QueryJobConfig`, sempre com default dataset e parâmetros vinculados. Dicionários suportam `:nome`/`@nome` repetidos; listas/tuplas usam parâmetros posicionais `?`, como os repositórios existentes de logout/perfil. Valores nunca são interpolados, literais/comentários são preservados e mistura/ausência/excesso de parâmetros falha antes de enviar o job.
+
+Tipos vêm dos valores Python: datetime aware → TIMESTAMP UTC; datetime naive → DATETIME; date → DATE; bool/int/float → BOOL/INT64/FLOAT64; Decimal/bytes/time → NUMERIC/BYTES/TIME. Strings, inclusive ISO aparentes, continuam STRING. `QueryParameter(type_, value)` permite scalar explícito, inclusive NULL tipado; TIMESTAMP exige datetime aware. A rotação passou a fornecer `now`/`expires` como datetime UTC, não strings. SQLite serializa esses valores como ISO UTC com `T`, preservando a comparação com o armazenamento existente. Resultados TIMESTAMP nativos do SDK são aceitos na validação de expiração.
+
+Foi mantido **um único UPDATE condicional** e uma única execução de job para o CAS. A contagem só é lida após `job.result()` e exatamente uma linha permite emitir o substituto; zero, desconhecido ou múltiplas linhas não concedem sucesso.
+
+A inspeção de `infrastructure/terraform/modules/gcp/bigquery` confirmou campos DATE e TIMESTAMP nos schemas analíticos, mas **não existe definição versionada de refresh_tokens/users/oauth_tokens**. O contrato exigido para rotação GCP é token_id/user_id/token_hash STRING, created_at/expires_at TIMESTAMP e revoked INTEGER/INT64. Isto é pré-condição documentada, não afirmação sobre tabela real; nenhuma tabela, schema ou infraestrutura foi criada/alterada. Não se certifica operação completa de autenticação em GCP com este patch.
+
+Os testes novos usam **google-cloud-bigquery 3.38.0 real**, fixado nos requirements, e apenas o cliente/job simulados, sem credenciais. Verificam SQL, JSON de serialização do SDK, tipos/timezones, parâmetros posicionais/nomeados, schema analítico versionado, falhas de job, contagem de linhas e timestamps nativos/SQLite. Os primeiros 11 casos reproduziram as falhas antes da correção. Os testes anteriores foram preservados. BigQuery real (IAM, schemas implantados, DML sobre streaming buffer e concorrência do serviço) permanece não validado; não houve dry-run, migração, merge ou deploy.
+
+Resultado da correção: **253 testes backend passaram**, incluindo **42 casos novos** do binder/SDK, além da integração real Android/FastAPI/SQLite. Cobertura backend **76,01%**, Ruff e verificação OpenAPI v1 aprovados; `pip check` sem conflitos após resolução conjunta com Beam/protobuf. Os jobs remotos serão conferidos no commit publicado.

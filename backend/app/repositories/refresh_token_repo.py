@@ -39,7 +39,12 @@ class RefreshTokenRepository:
         if not rows:
             return None
         row = rows[0]
-        if datetime.fromisoformat(row["expires_at"]) < datetime.now(UTC):
+        expires_at = row["expires_at"]
+        if not isinstance(expires_at, datetime):
+            expires_at = datetime.fromisoformat(expires_at)
+        if expires_at.utcoffset() is None:
+            raise ValueError("Refresh expiry must be timezone-aware")
+        if expires_at <= datetime.now(UTC):
             return None
         return row
 
@@ -70,7 +75,7 @@ class RefreshTokenRepository:
                WHERE token_hash = :previous AND user_id = :user_id
                  AND revoked = 0 AND expires_at > :now""",
             {"replacement": _hash_token(replacement), "previous": _hash_token(raw_token),
-             "user_id": user_id, "now": now.isoformat(),
-             "expires": (now + timedelta(days=get_settings().refresh_token_expire_days)).isoformat()},
+             "user_id": user_id, "now": now,
+             "expires": now + timedelta(days=get_settings().refresh_token_expire_days)},
         )
         return replacement if affected == 1 else None
