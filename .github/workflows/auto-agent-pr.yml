@@ -40,6 +40,15 @@ jobs:
             branch="$PUSH_BRANCH"
           fi
 
+          # Stacked launcher PR: native Health Connect is still a separate draft
+          # (#25). Keep its implementation out of the launcher's review diff.
+          base=master
+          body="Automated draft PR for agent branch $branch. Review scope and CI before approving. No automatic merge or deployment."
+          if [[ "$branch" == "codex/windows-android-launcher" ]]; then
+            base=codex/android-health-connect
+            body="Windows Android launcher; depends on #25, based on $base without including #24. See docs/android/WINDOWS-QUICKSTART.md and docs/android/WINDOWS-VALIDATION.md for scope, tests and physical-device limitations. No automatic merge or deployment."
+          fi
+
           if [[ ! "$branch" =~ ^fix/pkg-[a-zA-Z0-9._/-]+$ && ! "$branch" =~ ^codex/[a-zA-Z0-9._/-]+$ ]]; then
             echo "::error::Branch is not in an approved agent namespace: $branch"
             exit 1
@@ -54,15 +63,17 @@ jobs:
             exit 0
           fi
 
-          if ! gh api "repos/$GH_REPO/compare/master...$branch" --jq '.ahead_by' | grep -Eq '^[1-9][0-9]*$'; then
-            echo "Branch has no commits ahead of master; skipping."
+          if ! gh api "repos/$GH_REPO/compare/$base...$branch" --jq '.ahead_by' | grep -Eq '^[1-9][0-9]*$'; then
+            echo "Branch has no commits ahead of $base; skipping."
             exit 0
           fi
 
+          body_file="$(mktemp)"
+          printf '%s\n' "$body" > "$body_file"
           gh pr create \
             --repo "$GH_REPO" \
-            --base master \
+            --base "$base" \
             --head "$branch" \
             --draft \
             --title "chore(agent): review $branch" \
-            --body "Automated draft PR for agent branch \`$branch\`.\n\nReview scope, CI and linked issue before approving. No automatic merge or deployment."
+            --body-file "$body_file"

@@ -9,6 +9,25 @@ permissions:
   contents: read
 
 jobs:
+  windows-launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r backend/requirements-prod.txt
+        shell: powershell
+      - name: Launcher regressions on Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/windows-launcher.tests.ps1
+      - name: Launcher regressions on PowerShell 7
+        shell: pwsh
+        run: ./tests/windows-launcher.tests.ps1
+      - name: Windows real backend persistence and restart (synthetic data)
+        shell: powershell
+        run: ./tests/windows-backend-smoke.ps1
+
   backend-regression:
     runs-on: ubuntu-latest
     steps:
@@ -92,6 +111,8 @@ jobs:
       - run: npm test
       - run: npm run lint:pkg01
       - run: npm run typecheck
+      - name: Development APK runtime API address (real Metro, synthetic LAN)
+        run: node --test tests/launcher-metro.test.cjs
       - name: Build Android Hermes bundle
         run: npm run build:android
         env:
