@@ -199,6 +199,7 @@ function Select-VytalDevice([string[]]$Lines, [string]$Device) {
 }
 function Install-Vytal([string]$Root, [string]$ApkPath, [string]$Device, [string]$DatabasePath) {
     Assert-VytalLocalEnvironment
+    Assert-VytalStoppedForInstall $Root
     $null = Initialize-VytalState $Root $DatabasePath
     $tools = Get-VytalTools $Root -Install
     Invoke-VytalExternal $tools.python @('-m','pip','install','-r',(Join-Path $Root 'backend/requirements-prod.txt'))
@@ -241,6 +242,16 @@ function Test-VytalOwned($State, [string]$Address) {
     if (-not $State -or $State.Address -ne $Address) { return $false }
     $process = Get-Process -Id $State.Pid -ErrorAction SilentlyContinue
     return $null -ne $process -and $process.StartTime.ToUniversalTime().Ticks.ToString() -eq $State.StartTicks
+}
+function Assert-VytalStoppedForInstall([string]$Root) {
+    $path = Join-Path $Root '.local-vytal/windows-processes.json'
+    if (-not (Test-Path $path)) { return }
+    $state = Get-Content $path -Raw | ConvertFrom-Json
+    foreach ($name in @('backend','metro')) {
+        if ($state.PSObject.Properties[$name] -and (Test-VytalOwned $state.$name $state.$name.Address)) {
+            throw 'Feche as janelas backend/Metro antes de repetir install. Nenhuma dependencia, configuracao ou dado foi alterado.'
+        }
+    }
 }
 function Run-VytalService([string]$Root, [string]$Address, [ValidateSet('backend','metro')][string]$Name) {
     Assert-VytalLocalEnvironment

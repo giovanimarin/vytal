@@ -76,6 +76,16 @@ try {
     Check ($config.cloud.provider -eq 'local' -and $config.local.db_path -eq $db) 'local config, absolute correct DB path'
     Check ($first.ALLOW_DEV_SEED -eq 'false') 'no synthetic seeding'
     Check ($first.ENVIRONMENT -eq 'local') 'local environment only'
+    $worker = Get-Process -Id $PID
+    $running = @{backend=@{Pid=$PID;Address='192.168.1.20';StartTicks=$worker.StartTime.ToUniversalTime().Ticks.ToString()}}
+    $statePath=Join-Path $fixture '.local-vytal/windows-processes.json'
+    [IO.File]::WriteAllText($statePath, ($running | ConvertTo-Json -Depth 4))
+    Fails { Assert-VytalStoppedForInstall $fixture } 'antes de repetir install'
+    Check ((Get-FileHash $keyPath).Hash -eq $hash -and [IO.File]::ReadAllText($db) -eq 'synthetic-existing-data') 'install guard does not mutate keys/data'
+    $running.backend.StartTicks='0'
+    [IO.File]::WriteAllText($statePath, ($running | ConvertTo-Json -Depth 4))
+    Assert-VytalStoppedForInstall $fixture
+    Check ($true) 'stale PID does not block preparation'
     [IO.Directory]::CreateDirectory((Join-Path $fixture '.local-vytal/data')) | Out-Null
     $other = Join-Path $fixture '.local-vytal/data/vytal.db'
     [IO.File]::WriteAllText($other,'synthetic-pr24-data')
