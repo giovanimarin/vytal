@@ -88,7 +88,24 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          test -w /dev/kvm
+          # udev trigger is asynchronous; wait before inspecting permissions.
+          sudo udevadm settle
+          if [[ ! -c /dev/kvm ]]; then
+            sudo modprobe kvm || true
+            if grep -qw vmx /proc/cpuinfo; then sudo modprobe kvm_intel || true; fi
+            if grep -qw svm /proc/cpuinfo; then sudo modprobe kvm_amd || true; fi
+            sudo udevadm settle
+          fi
+          if [[ ! -c /dev/kvm ]]; then
+            echo '::error::The Ubuntu runner did not expose a KVM device for the required Android runtime test.'
+            exit 1
+          fi
+          sudo chmod a+rw /dev/kvm
+          ls -l /dev/kvm
+          if [[ ! -w /dev/kvm ]]; then
+            echo '::error::The Android test user cannot access the KVM device after udev setup.'
+            exit 1
+          fi
       - name: APK + Metro + local SQLite + real Health Connect (synthetic data)
         uses: reactivecircus/android-emulator-runner@v2
         with:
