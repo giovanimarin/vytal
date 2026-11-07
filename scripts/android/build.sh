@@ -3,6 +3,9 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root/mobile/vytal-app"
 export NODE_ENV=development EXPO_NO_TELEMETRY=1
+sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}
+[[ -n "$sdk" ]] || { echo 'Set ANDROID_HOME to the Android SDK.' >&2; exit 2; }
+export PATH="$sdk/build-tools/36.0.0:$sdk/platform-tools:$PATH"
 export EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://10.0.2.2:8000/api/v1}
 npm ci
 npx expo install --check
