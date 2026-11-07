@@ -36,8 +36,9 @@ test('CI development APK can load a new LAN API URL from Metro without native re
     }
     assert.ok(ready, `Metro startup: ${logs}`)
     const response = await fetch(`http://127.0.0.1:${port}/`, { headers: { accept: 'application/expo+json', 'expo-platform': 'android', 'expo-protocol-version': '1' }, signal: AbortSignal.timeout(90000) })
-    assert.equal(response.status, 200)
-    const manifest = await response.json()
+    const manifestBody = await response.text()
+    assert.equal(response.status, 200, `Metro manifest failed: ${manifestBody} ${logs}`)
+    const manifest = JSON.parse(manifestBody)
     assert.equal(manifest.extra.expoClient.extra.apiUrl, api)
     assert.equal(new URL(manifest.launchAsset.url).host, new URL(advertised).host)
     const bundleUrl = new URL(manifest.launchAsset.url)
@@ -47,8 +48,11 @@ test('CI development APK can load a new LAN API URL from Metro without native re
     const bundled = await fetch(bundleUrl, { signal: AbortSignal.timeout(120000) })
     assert.equal(bundled.status, 200)
     const source = await bundled.text()
-    assert.ok(source.includes('resolveApiUrl)(process.env.EXPO_PUBLIC_API_URL'), 'Transport must read the public API setting')
-    assert.ok(source.includes(`"EXPO_PUBLIC_API_URL": { enumerable: true, value: "${api}" }`), 'Metro must inject the selected API URL into the dev process.env polyfill')
+    // SDK 54's Babel preset inlines EXPO_PUBLIC_* references into the client.
+    // Assert the selected LAN API is in the served JS; avoid coupling to Babel's
+    // variable names or the removed SDK 53 process.env polyfill format.
+    assert.ok(source.includes(JSON.stringify(api)), 'Served Android JS must contain the selected LAN API URL')
+
   } finally {
     if (worker.exitCode === null) {
       if (process.platform === 'win32') execFileSync('taskkill', ['/PID', String(worker.pid), '/T', '/F'], { stdio: 'ignore' })
