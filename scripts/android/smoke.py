@@ -52,16 +52,22 @@ def wait(selector, timeout=90):
 
 
 def tap(selector, scroll=False):
-    for _ in range(8 if scroll else 1):
+    directions = [None] + ['down'] * 4 + ['up'] * 8 if scroll else [None]
+    for direction in directions:
+        if direction:
+            dimensions = re.findall(r'(\d+)x(\d+)', adb('shell', 'wm', 'size'))[-1]
+            width, height = map(int, dimensions)
+            first, second = (int(height * .8), int(height * .3))
+            if direction == 'up':
+                first, second = second, first
+            adb('shell', 'input', 'swipe', str(width//2), str(first), str(width//2), str(second), '400')
+            time.sleep(.5)
         node = find(selector)
         if node is not None:
             x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
             if x2 > x1 and y2 > y1:
                 adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
                 return
-        if scroll:
-            adb('shell', 'input', 'swipe', '500', '1600', '500', '600', '400')
-            time.sleep(.5)
     raise AssertionError(f'UI element not tappable: {selector}')
 
 
@@ -258,11 +264,12 @@ def run():
             tap('hc-origin', scroll=True)
             wait('importado / Health Connect')
             evidence('14-account-a-records-retained')
-            # Restart the APK without clearing SecureStore, then prove authenticated UI.
+            # Install over the APK without clearing SecureStore, then prove authenticated UI.
             adb('shell', 'am', 'force-stop', APP)
+            adb('install', '-r', str(ROOT / 'mobile/vytal-app/android/app/build/outputs/apk/debug/app-debug.apk'))
             adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url, APP)
             wait('dashboard-menu')
-            evidence('15-apk-restart-retains-session')
+            evidence('15-apk-reinstall-retains-session')
         finally:
             (OUT / 'logcat.txt').write_text(adb('logcat', '-d'))
             for process in (metro, backend):
@@ -284,8 +291,11 @@ try:
 except BaseException as error:
     message = (type(error).__name__ + ': ' + str(error))[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
     print('::error::Android runtime smoke: ' + message, flush=True)
+    print('Completed runtime checks: ' + ', '.join(checks), flush=True)
     try:
         evidence('FAILURE')
+        visible = ' | '.join(n.get('text', '') for n in tree().iter('node') if n.get('text'))
+        print('::error::Last Android UI: ' + visible[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'), flush=True)
     except (subprocess.SubprocessError, AssertionError, ET.ParseError, OSError) as capture_error:
         print('Could not capture failure UI:', type(capture_error).__name__, flush=True)
     raise
