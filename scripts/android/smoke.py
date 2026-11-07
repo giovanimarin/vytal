@@ -84,10 +84,21 @@ def tap(selector, scroll=False):
     raise AssertionError(f'UI element not tappable: {selector}')
 
 
+def hide_keyboard():
+    state = adb('shell', 'dumpsys', 'input_method')
+    if re.search(r'(?:mInputShown|isInputViewShown)\s*=\s*true', state):
+        adb('shell', 'input', 'keyevent', '4')
+        time.sleep(.5)
+
+
 def enter(selector, text):
+    hide_keyboard()
     tap(selector, scroll=True)
+    time.sleep(.5)
+    node = find(selector)
+    assert node is not None and node.get('focused') == 'true', f'Input did not receive focus: {selector}'
     adb('shell', 'input', 'text', text)
-    adb('shell', 'input', 'keyevent', '111')  # dismiss keyboard, keep route
+    hide_keyboard()
 
 
 def link(route):
@@ -324,7 +335,7 @@ except BaseException as error:
     logcat = OUT / 'logcat.txt'
     if logcat.exists():
         critical = [line for line in logcat.read_text(errors='replace').splitlines()
-                    if re.search(r'AndroidRuntime|Cannot find native module|ANR in com.vytal|ReactNativeJS.*(?:Error|Exception)', line)]
+                    if re.search(r'FATAL EXCEPTION| E AndroidRuntime|Cannot find native module|ANR in com.vytal|ReactNativeJS.*(?:Error|Exception)', line)]
         if critical:
             detail = '\n'.join(critical[-35:])[-5000:]
             print('::error::App runtime log: ' + detail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'), flush=True)
