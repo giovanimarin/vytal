@@ -16,7 +16,7 @@ Execute a partir do checkout deste PR, para servir o JavaScript e as dependênci
 gh pr checkout 28 && bash scripts/android/run-local.sh 192.168.1.10 RUN_ID
 ```
 
-Pré-requisitos: Node 22, Python 3.12, `gh` autenticado, `adb` e celular autorizado por USB. PC e celular devem compartilhar uma rede Wi-Fi confiável. O comando baixa o artifact **android-health-connect-debug-apk**, instala com `adb install -r`, inicia FastAPI/SQLite e Metro na LAN e abre o development client no telefone. O APK contém código nativo de desenvolvimento e usa o bundle servido pelo Metro. Se o menu de ferramentas Expo aparecer no primeiro acesso, use Voltar para fechá-lo; o smoke automatiza esse passo.
+Pré-requisitos: Node 22, Python 3.12, `gh` autenticado, `adb` e celular autorizado por USB. PC e celular devem compartilhar uma rede Wi-Fi confiável. O comando baixa o artifact **android-health-connect-debug-apk**, instala com `adb install -r`, inicia FastAPI/SQLite e Metro na LAN e abre o development client no telefone. O APK contém código nativo de desenvolvimento e usa o bundle servido pelo Metro. O launcher usa o parâmetro de onboarding do Dev Client para abrir diretamente o Vytal; cadastro e permissões do app seguem o fluxo normal.
 
 O launcher reutiliza SQLite, chaves de autenticação e `.env` existentes. Se houver bancos ambíguos, informe `VYTAL_DATABASE_PATH`. Ctrl+C encerra os serviços e mantém os dados. A instalação usa a identidade de assinatura debug do template anterior; se o Android rejeitar a atualização por certificado diferente, preserve o app instalado e confira a origem do APK.
 

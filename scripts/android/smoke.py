@@ -189,7 +189,7 @@ def run():
             # Close it before launching the app; Vytal crashes/ANRs remain failures.
             adb('shell', 'am', 'force-stop', 'com.google.android.apps.nexuslauncher')
             adb('shell', 'wm', 'dismiss-keyguard')
-            url = 'exp+vytal://expo-development-client/?url=' + quote('http://10.0.2.2:8081', safe='')
+            url = 'exp+vytal://expo-development-client/?url=' + quote('http://10.0.2.2:8081?disableOnboarding=1', safe='')
             adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url, APP)
             # Dev-client first-launch UI may show a one-time welcome overlay.
             boot_deadline = time.monotonic() + 150

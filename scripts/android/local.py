@@ -116,7 +116,7 @@ def main():
             time.sleep(.5)
         else:
             raise RuntimeError('Metro não iniciou.')
-        url = 'exp+vytal://expo-development-client/?url=' + quote(f'http://{address}:8081', safe='')
+        url = 'exp+vytal://expo-development-client/?url=' + quote(f'http://{address}:8081?disableOnboarding=1', safe='')
         subprocess.run(['adb', 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW',
                         '-d', url, 'com.vytal.app'], check=True)
         print(f'Backend SQLite: {db}\nMetro: http://{address}:8081\nCtrl+C encerra serviços; dados permanecem.', flush=True)
