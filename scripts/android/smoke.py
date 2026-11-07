@@ -98,8 +98,9 @@ def evidence(name):
     (OUT / (name + '.xml')).write_text(ET.tostring(tree(), encoding='unicode'))
     with (OUT / (name + '.png')).open('wb') as file:
         subprocess.run(['adb', 'exec-out', 'screencap', '-p'], stdout=file, check=True)
-    checks.append(name)
-    print('PASS:', name, flush=True)
+    if name != 'FAILURE':
+        checks.append(name)
+        print('::notice::Android runtime PASS: ' + name, flush=True)
 
 
 def sources():
@@ -195,6 +196,10 @@ def run():
             while time.monotonic() < boot_deadline:
                 if find('login-submit') is not None:
                     break
+                if find('Performance monitor') is not None and find('Go home') is not None:
+                    adb('shell', 'input', 'keyevent', '4')
+                    time.sleep(1)
+                    continue
                 for text in ('Continue', 'Got it'):
                     if find(text) is not None:
                         tap(text)
@@ -316,6 +321,13 @@ except BaseException as error:
     message = (type(error).__name__ + ': ' + str(error))[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
     print('::error::Android runtime smoke: ' + message, flush=True)
     print('Completed runtime checks: ' + ', '.join(checks), flush=True)
+    logcat = OUT / 'logcat.txt'
+    if logcat.exists():
+        critical = [line for line in logcat.read_text(errors='replace').splitlines()
+                    if re.search(r'AndroidRuntime|Cannot find native module|ANR in com.vytal|ReactNativeJS.*(?:Error|Exception)', line)]
+        if critical:
+            detail = '\n'.join(critical[-35:])[-5000:]
+            print('::error::App runtime log: ' + detail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'), flush=True)
     try:
         evidence('FAILURE')
         visible = ' | '.join(n.get('text', '') for n in tree().iter('node') if n.get('text'))

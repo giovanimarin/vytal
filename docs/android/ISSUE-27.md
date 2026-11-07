@@ -1,16 +1,30 @@
-# Issue #27 — Android runtime / Expo SDK 54
+# Issue #27 — runtime Android / Expo SDK 54
 
-Branch `codex/issue-27-android-runtime` is stacked on #26 (`codex/windows-android-launcher`), which depends on #25 (`codex/android-health-connect`). No merge, deployment, provisioning or changes to existing user data.
+PR draft contra `codex/windows-android-launcher` (#26), dependente de `codex/android-health-connect` (#25). Sem merge, deploy, provisionamento ou alteração de dados existentes.
 
-## Correction
+## Correção
 
-The failing APK used SDK 54 with SDK 52/53-era WebBrowser 14, Linking 7, SecureStore 14, Router 5 and Babel preset 13. Dependencies and the npm lockfile now use the SDK 54 versions (SDK 54.0.37, dev-client 6.0.21, WebBrowser 15, Linking 8, SecureStore 15, Router 6, Babel preset 54). Router's Constants/Font peers are explicit. Google Fit and Health Connect remain enabled.
+O APK com falha combinava SDK 54 com WebBrowser 14, Linking 7, SecureStore 14, Router 5 e Babel preset 13. O `package.json` e o lockfile agora usam SDK 54.0.37, dev-client 6.0.21, WebBrowser 15, Linking 8, SecureStore 15, Router 6 e Babel preset 54. Constants e Font, exigidos pelo Router, estão explícitos. Google Fit e Health Connect continuam disponíveis.
 
-`expo install --check`, `expo-doctor`, native autolinking resolution and inspection of the compiled DEX/signature/ARM64+x86_64 ABIs now gate the Android workflow. Unit tests and an exported JS bundle alone do not certify this fix.
+O workflow **Android APK runtime smoke** valida `expo install --check`, `expo-doctor`, autolinking, classes compiladas no DEX, assinatura, arquiteturas ARM64/x86_64 e permissões somente de leitura do APK. A verificação inclui o listener Expo responsável pelo consentimento do Health Connect. O APK é publicado após a compilação; a aprovação do runtime depende também do smoke verde no mesmo workflow.
 
-## Reproduce the build and smoke
+## Ubuntu + Samsung: instalar por cima e abrir Metro
 
-Ubuntu, Node 22, Python 3.12, JDK 17, Android SDK 36/build-tools 36, and a running Android 14/API 34 Google APIs emulator with `adb` available:
+Execute a partir do checkout deste PR, para servir o JavaScript e as dependências do SDK corrigido. Use o IPv4 privado do PC e o ID do workflow validado, indicado na entrega:
+
+```bash
+gh pr checkout 28 && bash scripts/android/run-local.sh 192.168.1.10 RUN_ID
+```
+
+Pré-requisitos: Node 22, Python 3.12, `gh` autenticado, `adb` e celular autorizado por USB. PC e celular devem compartilhar uma rede Wi-Fi confiável. O comando baixa o artifact **android-health-connect-debug-apk**, instala com `adb install -r`, inicia FastAPI/SQLite e Metro na LAN e abre o development client no telefone. O APK contém código nativo de desenvolvimento e usa o bundle servido pelo Metro. Se o menu de ferramentas Expo aparecer no primeiro acesso, use Voltar para fechá-lo; o smoke automatiza esse passo.
+
+O launcher reutiliza SQLite, chaves de autenticação e `.env` existentes. Se houver bancos ambíguos, informe `VYTAL_DATABASE_PATH`. Ctrl+C encerra os serviços e mantém os dados. A instalação usa a identidade de assinatura debug do template anterior; se o Android rejeitar a atualização por certificado diferente, preserve o app instalado e confira a origem do APK.
+
+Download pelo navegador: abra o workflow verde desta branch, baixe **Artifacts → android-health-connect-debug-apk** e extraia `app-debug.apk`. A instalação equivalente é `adb install -r app-debug.apk`. Preserve o armazenamento do app, o SQLite e as chaves locais; desinstalação e reset não fazem parte do procedimento.
+
+## Reproduzir build e smoke
+
+Ubuntu, Node 22, Python 3.12, JDK 17, Android SDK 36/build-tools 36 e um emulador Android 14/API 34 Google APIs dedicado, com `adb` disponível. Defina `ANDROID_HOME` para o SDK:
 
 ```bash
 python3.12 -m venv .venv
@@ -18,20 +32,24 @@ python3.12 -m venv .venv
 bash scripts/android/build.sh && .venv/bin/python scripts/android/smoke.py
 ```
 
-The build uses a clean generated Android directory and builds a universal debug dev-client APK for ARM64 phones and x86_64 emulators. Set `ANDROID_HOME` to the SDK; the build script adds build-tools to PATH. The separate `org.vytal.smokefixture` APK writes 123 synthetic steps into the emulator's actual Health Connect service; it is never included in the Vytal APK and never impersonates Garmin.
+O build recria o projeto Android e compila o APK universal debug para Samsung ARM64 e emulador x86_64. O smoke recusa dispositivos físicos. O APK auxiliar `org.vytal.smokefixture` grava 123 passos sintéticos no serviço Health Connect real do emulador, com sua própria origem; ele é separado do APK Vytal.
 
-The runtime smoke boots the actual APK with Metro and a real FastAPI/SQLite server bound to `0.0.0.0`, accessed at `10.0.2.2` by the emulator. It drives registration, login, dashboard, Google Fit route (native WebBrowser import), data sources, native Health Connect permission denial, granted empty reads, synthetic import, replay/deduplication, network failure, backend restart and account A/B isolation. It restarts the APK without clearing app storage. Screenshots, UI trees, logcat and the list of completed checks are uploaded even on failure. The backend uses a new temporary SQLite database and random test-only keys, never an existing developer database.
+O smoke inicia o APK com Metro e FastAPI/SQLite local, acessado pelo Android em `10.0.2.2`. O manifest e o bundle usam esse endereço. O fluxo cobre:
 
-## Install on Ubuntu + Samsung
+- Boot sem red screen; cadastro, login e dashboard.
+- Rota Google Fit abrindo o Chrome pela ponte nativa WebBrowser.
+- Fontes de dados e consentimento nativo Health Connect negado.
+- Permissões concedidas e leitura nativa sem registros.
+- Importação de passos da origem sintética, releitura e deduplicação.
+- Erro de rede e reinício do backend preservando o mesmo SQLite.
+- Isolamento A/B, retorno à conta A e reinstalação `-r` preservando a sessão.
 
-Use the successful **Android APK runtime smoke** run for this branch, artifact **android-health-connect-debug-apk**. The artifact contains `app-debug.apk`. Install over the existing development APK with `adb install -r app-debug.apk`; do not uninstall, clear app data, delete SQLite, or rotate local keys. Android rejects an upgrade with a different signing certificate; do not work around that by uninstalling. The SDK/template debug signing identity is unchanged.
+O SQLite do smoke é temporário, com contas e chaves exclusivamente de teste. A execução publica screenshots, árvores de UI, logcat, logs de Metro/backend e `checks.json`, inclusive em caso de falha. O CI encerra os compiladores antes do emulador, exige KVM e limita CPU/RAM do AVD. Erros de UI transitórios recebem tentativas limitadas; red screens e ANRs do Vytal falham o teste.
 
-The single-command launcher below downloads the artifact, installs with `-r`, starts the local backend and Metro, and opens the dev-client. Use your PC's private LAN IPv4 and the successful run ID:
+## Evidências e limites
 
-```bash
-bash scripts/android/run-local.sh 192.168.1.10 RUN_ID
-```
+Os workflows vinculados ao PR registram os resultados por commit. O artifact `android-runtime-evidence` contém a lista exata das etapas concluídas e as telas correspondentes. Os testes locais do backend passaram: **445 testes**, cobertura **84,24%**. Também passaram os **73 testes unitários do app**, integração cliente/API/SQLite, teste de manifest/bundle Metro com Node 22, TypeScript, lint e **4 testes de persistência do launcher Linux**.
 
-This requires `gh` authenticated for artifact download, `adb`, Node 22 and Python 3.12; both PC and phone must share a trusted Wi-Fi network. No cloud backend, EAS login, administrator firewall changes or data resets are required. Existing backend `.env` and SQLite configuration are reused; ambiguity fails with an explicit path request. Set `VYTAL_DATABASE_PATH` to select an existing database when needed.
+As primeiras execuções publicaram APKs que passaram build, inspeção nativa e `expo-doctor`, mas o smoke detectou ANR do Pixel Launcher do AVD antes de alcançar o login. Esses resultados permanecem no histórico. A validação de entrega deve usar o workflow de runtime verde, com seus artifacts correspondentes.
 
-Real Samsung permissions, historical Garmin-origin data, and Garmin homologation remain physical-device checks. Synthetic emulator results do not certify those integrations. Runtime and CI outcomes are recorded below after execution.
+Permissões e dados históricos reais do Samsung/Garmin permanecem como homologação em dispositivo físico. Os passos sintéticos do emulador têm origem própria e não certificam a integração Garmin real. Google Fit é exercitado até a abertura do browser; o smoke usa credenciais locais sintéticas e não executa login OAuth real.
