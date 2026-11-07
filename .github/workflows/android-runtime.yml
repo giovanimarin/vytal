@@ -71,6 +71,18 @@ jobs:
       - name: Expo doctor (including online schema and native compatibility)
         working-directory: mobile/vytal-app
         run: npx expo-doctor
+      - name: Release compiler memory before booting Android
+        run: |
+          mobile/vytal-app/android/gradlew -p mobile/vytal-app/android --stop
+          python - <<'PYCODE'
+          import os
+          import signal
+          import subprocess
+          for line in subprocess.check_output(['jps', '-l'], text=True).splitlines():
+              pid, _, name = line.partition(' ')
+              if name == 'org.jetbrains.kotlin.daemon.KotlinCompileDaemon':
+                  os.kill(int(pid), signal.SIGTERM)
+          PYCODE
       - name: Enable KVM for the Android runtime test
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -82,9 +94,9 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048 -cores 2
           script: python scripts/android/smoke.py
       - name: Upload runtime evidence (synthetic emulator, not Garmin homologation)
         if: always()

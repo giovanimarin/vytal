@@ -72,8 +72,7 @@ def tap(selector, scroll=False):
 
 
 def enter(selector, text):
-    wait(selector)
-    tap(selector)
+    tap(selector, scroll=True)
     adb('shell', 'input', 'text', text)
     adb('shell', 'input', 'keyevent', '111')  # dismiss keyboard, keep route
 
@@ -108,7 +107,7 @@ def signout():
 def signin(email, password):
     enter('login-email', email)
     enter('login-password', password)
-    tap('login-submit')
+    tap('login-submit', scroll=True)
     wait('dashboard-menu')
 
 
@@ -172,6 +171,10 @@ def run():
             if not fixture_apk.exists():
                 fixture_apk = next((ROOT / 'tests/android-fixture/build/outputs/apk/debug').glob('*.apk'))
             adb('install', '-r', str(fixture_apk))
+            # The Pixel launcher is outside Vytal and can ANR during a fresh AVD boot.
+            # Close it before launching the app; Vytal crashes/ANRs remain failures.
+            adb('shell', 'am', 'force-stop', 'com.google.android.apps.nexuslauncher')
+            adb('shell', 'wm', 'dismiss-keyguard')
             url = 'exp+vytal://expo-development-client/?url=' + quote('http://10.0.2.2:8081', safe='')
             adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url, APP)
             # Dev-client first-launch UI may show a one-time welcome overlay.
