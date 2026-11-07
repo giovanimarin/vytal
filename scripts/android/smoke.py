@@ -46,10 +46,11 @@ def tree():
     raise AssertionError(f'Android UI hierarchy unavailable after retries: {last_error}')
 
 
-def find(selector):
+def find(selector, exact=False):
     for node in tree().iter('node'):
         if (node.get('resource-id', '').split('/')[-1] == selector
-                or selector in node.get('text', '') or selector == node.get('content-desc')):
+                or (selector == node.get('text', '') if exact else selector in node.get('text', ''))
+                or selector == node.get('content-desc')):
             return node
     return None
 
@@ -74,7 +75,7 @@ def wait(selector, timeout=90, scroll=False):
     raise AssertionError(f'UI did not show {selector}')
 
 
-def reveal(selector, scroll=False):
+def reveal(selector, scroll=False, exact=False):
     directions = [None] + ['down'] * 4 + ['up'] * 8 if scroll else [None]
     for direction in directions:
         if direction:
@@ -85,7 +86,7 @@ def reveal(selector, scroll=False):
                 first, second = second, first
             adb('shell', 'input', 'swipe', str(width//2), str(first), str(width//2), str(second), '400')
             time.sleep(.5)
-        node = find(selector)
+        node = find(selector, exact=exact)
         if node is not None:
             x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
             if x2 > x1 and y2 > y1:
@@ -93,8 +94,8 @@ def reveal(selector, scroll=False):
     raise ElementNotVisibleError(f'UI element not visible: {selector}')
 
 
-def tap(selector, scroll=False):
-    node = reveal(selector, scroll)
+def tap(selector, scroll=False, exact=False):
+    node = reveal(selector, scroll, exact)
     x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
@@ -135,6 +136,24 @@ def sources():
     wait('Fontes de Dados')
     tap('Fontes de Dados')
     wait('hc-connect')
+
+
+def complete_health_connect_setup():
+    # Android's first-use HC onboarding is separate from Vytal's consent callback.
+    end = time.monotonic() + 90
+    while time.monotonic() < end:
+        if find('hc-sync') is not None:
+            return
+        if find('Get started', exact=True) is not None:
+            tap('Get started', exact=True)
+        else:
+            allow = find('Allow', exact=True)
+            if allow is not None and allow.get('enabled') == 'true':
+                tap('Allow', exact=True)
+            elif find('Allow all', exact=True) is not None:
+                tap('Allow all', exact=True)
+        time.sleep(1)
+    raise AssertionError('Health Connect setup/consent did not return to Vytal')
 
 
 def signout():
@@ -282,6 +301,7 @@ def run():
             for kind in reads:
                 adb('shell', 'pm', 'grant', APP, 'android.permission.health.READ_' + kind)
             tap('hc-connect', scroll=True)
+            complete_health_connect_setup()
             wait('hc-sync', timeout=120, scroll=True)
             wait('Sem registros para o filtro', timeout=120, scroll=True)
             evidence('07-real-native-empty-read')
