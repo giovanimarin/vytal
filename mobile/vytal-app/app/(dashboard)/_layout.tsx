@@ -44,6 +44,7 @@ export default function DashboardLayout() {
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.iconButton}
+          testID="dashboard-menu"
           onPress={() => setMenuOpen(true)}
           activeOpacity={0.7}
         >

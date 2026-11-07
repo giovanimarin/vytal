@@ -87,6 +87,7 @@ export default function RegisterScreen() {
               style={[styles.input, nameFocused && styles.inputFocused]}
               placeholder="Seu nome completo"
               placeholderTextColor="#475569"
+              testID="register-name"
               value={name}
               onChangeText={setName}
               onFocus={() => setNameFocused(true)}
@@ -103,6 +104,7 @@ export default function RegisterScreen() {
               style={[styles.input, emailFocused && styles.inputFocused]}
               placeholder="seu@email.com"
               placeholderTextColor="#475569"
+              testID="register-email"
               value={email}
               onChangeText={setEmail}
               onFocus={() => setEmailFocused(true)}
@@ -121,6 +123,7 @@ export default function RegisterScreen() {
               style={[styles.input, passwordFocused && styles.inputFocused]}
               placeholder="Mínimo 6 caracteres"
               placeholderTextColor="#475569"
+              testID="register-password"
               value={password}
               onChangeText={setPassword}
               onFocus={() => setPasswordFocused(true)}
@@ -137,6 +140,7 @@ export default function RegisterScreen() {
               style={[styles.input, confirmFocused && styles.inputFocused]}
               placeholder="Repita a senha"
               placeholderTextColor="#475569"
+              testID="register-confirmPassword"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               onFocus={() => setConfirmFocused(true)}
@@ -155,6 +159,7 @@ export default function RegisterScreen() {
           )}
 
           <TouchableOpacity
+            testID="register-submit"
             style={[styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleRegister}
             disabled={loading}

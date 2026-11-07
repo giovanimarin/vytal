@@ -74,13 +74,13 @@ export function HealthConnectPanel({ account }: { account: string }) {
   return <View style={styles.card}>
     <Text style={styles.title}>Conexão Saúde (Health Connect)</Text>
     <Text style={styles.text}>Leitura local opcional. Dados disponíveis de Garmin e outros apps, sem credenciais Garmin. O Vytal guarda os registros no backend SQLite da sua conta via Wi-Fi; não envia ao Google Cloud. Revogue leitura nas configurações da Conexão Saúde. Dados simulados não são importados por este conector. A leitura inicial cobre 30 dias; registros mais antigos retidos não são revalidados numa releitura.</Text>
-    <Text accessibilityLiveRegion="polite" style={styles.text}>{status}</Text>
+    <Text testID="hc-status" accessibilityLiveRegion="polite" style={styles.text}>{status}</Text>
     {busy ? <ActivityIndicator /> : <View>
-      <TouchableOpacity accessibilityRole="button" onPress={() => sync(true)} style={styles.button}><Text style={styles.text}>Conectar / conceder leitura</Text></TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" onPress={rescan} style={styles.button}><Text style={styles.text}>Reler janela inicial (30 dias)</Text></TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" onPress={() => sync(false)} style={styles.button}><Text style={styles.text}>Sincronizar novamente</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" testID="hc-connect" onPress={() => sync(true)} style={styles.button}><Text style={styles.text}>Conectar / conceder leitura</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" testID="hc-rescan" onPress={rescan} style={styles.button}><Text style={styles.text}>Reler janela inicial (30 dias)</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" testID="hc-sync" onPress={() => sync(false)} style={styles.button}><Text style={styles.text}>Sincronizar novamente</Text></TouchableOpacity>
     </View>}
-    <TouchableOpacity onPress={() => filter(category, !garminOnly)} style={styles.button}><Text style={styles.text}>{garminOnly ? 'Origem: Garmin Connect · mostrar todas' : 'Todas as origens · mostrar só Garmin'}</Text></TouchableOpacity>
+    <TouchableOpacity testID="hc-origin" onPress={() => filter(category, !garminOnly)} style={styles.button}><Text style={styles.text}>{garminOnly ? 'Origem: Garmin Connect · mostrar todas' : 'Todas as origens · mostrar só Garmin'}</Text></TouchableOpacity>
     <ScrollView horizontal><TouchableOpacity onPress={() => filter('')} style={styles.button}><Text style={styles.text}>Todos</Text></TouchableOpacity>
       {RECORD_TYPES.map(type => <TouchableOpacity key={type} onPress={() => filter(type)} style={styles.button}><Text style={styles.text}>{LABELS[type]}</Text></TouchableOpacity>)}
     </ScrollView>

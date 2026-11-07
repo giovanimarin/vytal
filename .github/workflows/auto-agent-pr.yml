@@ -49,6 +49,11 @@ jobs:
             body="Windows Android launcher; depends on #25, based on $base without including #24. See docs/android/WINDOWS-QUICKSTART.md and docs/android/WINDOWS-VALIDATION.md for scope, tests and physical-device limitations. No automatic merge or deployment."
           fi
 
+          if [[ "$branch" == "codex/issue-27-android-runtime" ]]; then
+            base=codex/windows-android-launcher
+            body="Fixes #27. SDK 54 dependency alignment, native autolinking/APK assertions and real Android emulator smoke against local SQLite. Stacked on #26 and #25. See docs/android/ISSUE-27.md for commands, evidence and device limitations. No merge or deploy."
+          fi
+
           if [[ ! "$branch" =~ ^fix/pkg-[a-zA-Z0-9._/-]+$ && ! "$branch" =~ ^codex/[a-zA-Z0-9._/-]+$ ]]; then
             echo "::error::Branch is not in an approved agent namespace: $branch"
             exit 1
