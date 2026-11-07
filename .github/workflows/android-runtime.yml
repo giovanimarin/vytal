@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-runtime-${{ github.ref }}
+  # Retain APK/evidence for each commit while a follow-up correction is tested.
+  group: android-runtime-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -60,6 +61,13 @@ jobs:
           PYCODE
             exit 1
           fi
+      - name: Upload updated installable development APK
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-health-connect-debug-apk
+          path: mobile/vytal-app/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
       - name: Expo doctor (including online schema and native compatibility)
         working-directory: mobile/vytal-app
         run: npx expo-doctor
@@ -78,13 +86,6 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
           script: python scripts/android/smoke.py
-      - name: Upload updated installable development APK
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-health-connect-debug-apk
-          path: mobile/vytal-app/android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
       - name: Upload runtime evidence (synthetic emulator, not Garmin homologation)
         if: always()
         uses: actions/upload-artifact@v4

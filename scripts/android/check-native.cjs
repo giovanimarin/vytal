@@ -13,7 +13,7 @@ for (const [name, range] of Object.entries(expected)) {
 assert.ok(semver.satisfies(require(resolve('babel-preset-expo/package.json')).version, require(resolve('expo/package.json')).dependencies['babel-preset-expo']))
 const autolink = require.resolve('expo-modules-autolinking/bin/expo-modules-autolinking', { paths: [app] })
 const modules = JSON.parse(execFileSync(process.execPath, [autolink, 'resolve', '--platform', 'android', '--json'], { cwd: app, encoding: 'utf8' })).modules
-for (const name of ['expo-web-browser', 'expo-linking', 'expo-secure-store', 'expo-dev-client']) {
+for (const name of ['expo-web-browser', 'expo-linking', 'expo-secure-store', 'expo-dev-client', 'react-native-health-connect']) {
   assert.ok(modules.some(m => m.packageName === name), `Native autolinking missing ${name}`)
 }
 const rn = JSON.parse(execFileSync(process.execPath, [autolink, 'react-native-config', '--platform', 'android', '--json'], { cwd: app, encoding: 'utf8' }))

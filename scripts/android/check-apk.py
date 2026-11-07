@@ -9,7 +9,7 @@ apk = pathlib.Path(sys.argv[1])
 with zipfile.ZipFile(apk) as archive:
     dex = b''.join(archive.read(n) for n in archive.namelist() if n.endswith('.dex'))
     for name in (b'expo/modules/webbrowser/WebBrowserModule', b'expo/modules/securestore/SecureStoreModule',
-                 b'expo/modules/linking/ExpoLinkingModule', b'HealthConnectModule', b'HealthPermissionsActivity'):
+                 b'expo/modules/linking/ExpoLinkingModule', b'HealthConnectModule', b'HealthConnectPermissionReactActivityHandler', b'HealthPermissionsActivity'):
         assert name in dex, f'Compiled native module missing: {name!r}'
     for abi in ('arm64-v8a', 'x86_64'):
         assert any(n.startswith(f'lib/{abi}/') for n in archive.namelist()), f'Missing {abi}'

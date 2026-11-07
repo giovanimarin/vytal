@@ -23,7 +23,7 @@ checks = []
 
 
 def adb(*args):
-    return subprocess.check_output(['adb', *args], text=True, stderr=subprocess.STDOUT)
+    return subprocess.check_output(['adb', *args], text=True, stderr=subprocess.STDOUT, timeout=30)
 
 
 def tree():
@@ -113,6 +113,8 @@ def signin(email, password):
 
 
 def run():
+    assert adb('shell', 'getprop', 'ro.kernel.qemu').strip() == '1', 'Smoke only runs on a dedicated emulator; physical devices are refused'
+    assert int(adb('shell', 'getprop', 'ro.build.version.sdk').strip()) >= 34, 'Smoke requires Android 14 Health Connect'
     # CI always uses a new temporary backend/DB; never a developer's database.
     with tempfile.TemporaryDirectory(prefix='vytal-android-smoke-') as directory:
         state = Path(directory)
@@ -146,7 +148,8 @@ def run():
         try:
             backend = start_backend()
             metro_env = dict(os.environ, NODE_ENV='development', EXPO_OFFLINE='1', CI='1',
-                             EXPO_NO_TELEMETRY='1', EXPO_PUBLIC_API_URL='http://10.0.2.2:8000/api/v1')
+                             EXPO_NO_TELEMETRY='1', EXPO_PUBLIC_API_URL='http://10.0.2.2:8000/api/v1',
+                             EXPO_PACKAGER_PROXY_URL='http://10.0.2.2:8081', REACT_NATIVE_PACKAGER_HOSTNAME='10.0.2.2')
             metro = subprocess.Popen(['node', 'node_modules/expo/bin/cli', 'start', '--dev-client', '--localhost', '--clear'],
                 cwd=ROOT / 'mobile/vytal-app', env=metro_env, stdout=metro_log, stderr=subprocess.STDOUT)
             for _ in range(120):
@@ -158,6 +161,10 @@ def run():
                 time.sleep(.5)
             else:
                 raise AssertionError('Metro startup timed out')
+            manifest = httpx.get('http://127.0.0.1:8081/', headers={
+                'accept': 'application/expo+json', 'expo-platform': 'android', 'expo-protocol-version': '1'}, timeout=90).raise_for_status().json()
+            assert manifest['launchAsset']['url'].startswith('http://10.0.2.2:8081/'), 'Metro must advertise a bundle URL reachable from Android'
+            assert manifest['extra']['expoClient']['extra']['apiUrl'] == 'http://10.0.2.2:8000/api/v1'
             adb('logcat', '-c')
             adb('install', '-r', str(ROOT / 'mobile/vytal-app/android/app/build/outputs/apk/debug/app-debug.apk'))
             fixture_apk = ROOT / 'tests/android-fixture/build/outputs/apk/debug/android-fixture-debug.apk'
@@ -168,14 +175,15 @@ def run():
             url = 'exp+vytal://expo-development-client/?url=' + quote('http://10.0.2.2:8081', safe='')
             adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url, APP)
             # Dev-client first-launch UI may show a one-time welcome overlay.
-            for _ in range(90):
+            boot_deadline = time.monotonic() + 150
+            while time.monotonic() < boot_deadline:
                 if find('login-submit') is not None:
                     break
                 for text in ('Continue', 'Got it'):
                     if find(text) is not None:
                         tap(text)
                 time.sleep(1)
-            wait('login-submit')
+            wait('login-submit', timeout=10)
             evidence('01-boot-login-no-red-screen')
             stamp = str(time.time_ns())
             email_a, email_b = f'smoke-a-{stamp}@example.invalid', f'smoke-b-{stamp}@example.invalid'
