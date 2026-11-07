@@ -241,8 +241,14 @@ def run():
             enter('register-password', password)
             enter('register-confirmPassword', password)
             tap('register-submit', scroll=True)
-            time.sleep(2)
-            tap('Pular por agora', scroll=True)
+            registration_deadline = time.monotonic() + 90
+            while time.monotonic() < registration_deadline:
+                if find('dashboard-menu') is not None:
+                    break
+                if find('Complete seu perfil') is not None:
+                    tap('Pular por agora', scroll=True)
+                    break
+                time.sleep(1)
             wait('dashboard-menu')
             evidence('02-registration-dashboard')
             signout()
