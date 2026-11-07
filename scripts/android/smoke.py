@@ -20,10 +20,11 @@ OUT.mkdir(parents=True, exist_ok=True)
 APP = 'com.vytal.app'
 FIXTURE = 'org.vytal.smokefixture'
 checks = []
+recent_taps = []
 
 
 def adb(*args, timeout=30):
-    return subprocess.check_output(['adb', *args], text=True, stderr=subprocess.STDOUT, timeout=timeout)
+    return subprocess.check_output(['adb', *args], text=True, errors='replace', stderr=subprocess.STDOUT, timeout=timeout)
 
 
 def tree():
@@ -96,8 +97,20 @@ def reveal(selector, scroll=False, exact=False):
 
 def tap(selector, scroll=False, exact=False):
     node = reveal(selector, scroll, exact)
+    recent_taps.append({'target': selector, 'bounds': node.get('bounds')})
+    del recent_taps[:-8]
     x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
+
+
+def stop_process(process):
+    if process is not None and process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=10)
 
 
 def hide_keyboard():
@@ -186,6 +199,7 @@ def run():
         metro_log = (OUT / 'metro.log').open('w')
         backend = None
         metro = None
+        logcat_captured = False
 
         def start_backend():
             process = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', '8000'],
@@ -325,13 +339,13 @@ def run():
             wait('1 registros importados', timeout=120, scroll=True)
             assert client.get('/health-connect/records', headers=headers).json()['retained_raw'] == 1
             evidence('10-replay-deduplicated')
-            backend.terminate()
-            backend.wait(timeout=10)
+            stop_process(backend)
             tap('hc-sync', scroll=True)
             wait('hc-sync', timeout=120, scroll=True)
             wait('Falha na importação', timeout=120, scroll=True)
             evidence('11-network-error-preserves-session')
             backend = start_backend()  # same SQLite, same keys
+            assert client.get('/health-connect/records', headers=headers).raise_for_status().json()['retained_raw'] == 1
             tap('hc-sync', scroll=True)
             wait('hc-sync', timeout=120, scroll=True)
             wait('1 registros importados', timeout=120, scroll=True)
@@ -358,17 +372,18 @@ def run():
             wait('dashboard-menu')
             evidence('15-apk-reinstall-retains-session')
         finally:
-            (OUT / 'logcat.txt').write_text(adb('logcat', '-d'))
+            try:
+                (OUT / 'logcat.txt').write_text(adb('logcat', '-d'))
+                logcat_captured = True
+            except subprocess.SubprocessError as capture_error:
+                (OUT / 'logcat.txt').write_text('Logcat capture failed: ' + str(capture_error))
+                print('::warning::Could not collect logcat; preserving the original test result', flush=True)
             for process in (metro, backend):
-                if process is not None and process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=10)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
+                stop_process(process)
             client.close()
             backend_log.close()
             metro_log.close()
+    assert logcat_captured, 'Runtime logcat evidence could not be collected'
     logs = (OUT / 'logcat.txt').read_text()
     assert not re.search(r"Cannot find native module|Unable to resolve module|FATAL EXCEPTION|ReactNativeJS.*(?:TypeError|ReferenceError)", logs), 'Runtime error in logcat'
 
@@ -379,6 +394,7 @@ except BaseException as error:
     message = (type(error).__name__ + ': ' + str(error))[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
     print('::error::Android runtime smoke: ' + message, flush=True)
     print('Completed runtime checks: ' + ', '.join(checks), flush=True)
+    print('::notice::Recent UI taps: ' + json.dumps(recent_taps), flush=True)
     logcat = OUT / 'logcat.txt'
     if logcat.exists():
         critical = [line for line in logcat.read_text(errors='replace').splitlines()
