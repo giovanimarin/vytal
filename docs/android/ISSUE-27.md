@@ -13,7 +13,7 @@ O workflow **Android APK runtime smoke** valida `expo install --check`, `expo-do
 Execute a partir do checkout deste PR, para servir o JavaScript e as dependências do SDK corrigido. Use o IPv4 privado do PC e o ID do workflow validado, indicado na entrega:
 
 ```bash
-gh pr checkout 28 && bash scripts/android/run-local.sh 192.168.1.10 RUN_ID
+gh pr checkout 28 && bash scripts/android/run-local.sh 192.168.1.10 42396895440
 ```
 
 Pré-requisitos: Node 22, Python 3.12, `gh` autenticado, `adb` e celular autorizado por USB. PC e celular devem compartilhar uma rede Wi-Fi confiável. O comando baixa o artifact **android-health-connect-debug-apk**, instala com `adb install -r`, inicia FastAPI/SQLite e Metro na LAN e abre o development client no telefone. O APK contém código nativo de desenvolvimento e usa o bundle servido pelo Metro. O launcher usa o parâmetro de onboarding do Dev Client para abrir diretamente o Vytal; cadastro e permissões do app seguem o fluxo normal.
@@ -47,6 +47,8 @@ O smoke inicia o APK com Metro e FastAPI/SQLite local, acessado pelo Android em 
 No AVD, a negação usa a UI nativa; a concessão para leitura é aplicada por `pm grant`, seguida de chamadas reais ao SDK Health Connect. O SQLite do smoke é temporário, com contas e chaves exclusivamente de teste. A execução publica screenshots, árvores de UI, logcat, logs de Metro/backend e `checks.json`, inclusive em caso de falha. O CI encerra os compiladores antes do emulador, exige KVM e limita CPU/RAM do AVD. Erros de UI transitórios recebem tentativas limitadas; red screens e ANRs do Vytal falham o teste.
 
 ## Evidências e limites
+
+APK fixado nos launchers: [run 42396895440](https://github.com/giovanimarin/vytal/actions/runs/42396895440), commit `440a01b`, artifact **android-health-connect-debug-apk**. O check **apk-runtime** e seu artifact **android-runtime-evidence** registram a validação do build e das 15 etapas. Use a conclusão verde do workflow como referência de aprovação do runtime.
 
 Os workflows vinculados ao PR registram os resultados por commit. O artifact `android-runtime-evidence` contém a lista exata das etapas concluídas e as telas correspondentes. Os testes locais do backend passaram: **445 testes**, cobertura **84,24%**. Também passaram os **73 testes unitários do app**, integração cliente/API/SQLite, teste de manifest/bundle Metro com Node 22, TypeScript, lint e **4 testes de persistência do launcher Linux**.
 

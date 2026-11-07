@@ -113,6 +113,17 @@ try {
     Check ((Get-FileHash $apk).Hash -eq (Get-FileHash $target).Hash) 'APK copied without modification'
     Copy-VytalApk $target $target
     Check (Test-Path $target) 'cached APK self-validation'
+    # A cached APK from #26 must not override the validated SDK 54 build.
+    $apkRun = & (Get-Module Vytal.Local) { $script:ApkRun }
+    $legacyApk = Join-Path $fixture '.local-vytal/apk/app-debug.apk'
+    $currentApk = Join-Path $fixture ('.local-vytal/apk-' + $apkRun + '/app-debug.apk')
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($legacyApk)) | Out-Null
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($currentApk)) | Out-Null
+    Copy-Item $apk $legacyApk
+    Copy-Item $apk $currentApk
+    Check (([IO.Path]::GetFullPath((Get-VytalApk $fixture ''))) -eq [IO.Path]::GetFullPath($currentApk)) 'validated APK run has a separate cache'
+    Check ((Get-FileHash $legacyApk).Hash -eq (Get-FileHash $apk).Hash) 'legacy APK cache preserved'
+
     $archive = Join-Path $temporary 'artifact.zip'
     $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Create)
     try { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$apk,'app-debug.apk') | Out-Null } finally { $zip.Dispose() }

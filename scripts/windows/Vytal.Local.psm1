@@ -1,8 +1,8 @@
 #requires -Version 5.1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-# Known successful HC development APK; no Android compilation on the user's PC.
-$script:ApkRun = '42129619190'
+# SDK 54 HC development APK; runtime evidence is attached to the pinned CI run.
+$script:ApkRun = '42396895440'
 $script:ApkRunUrl = 'https://github.com/giovanimarin/vytal/actions/runs/' + $script:ApkRun
 
 function Assert-VytalLocalEnvironment {
@@ -131,7 +131,7 @@ function Get-VytalTools([string]$Root, [switch]$Install) {
     return @{python=$python; npm=$npm.Source}
 }
 function Get-VytalApk([string]$Root, [string]$ApkPath) {
-    $folder = Join-Path $Root '.local-vytal/apk'
+    $folder = Join-Path $Root ('.local-vytal/apk-' + $script:ApkRun)
     [IO.Directory]::CreateDirectory($folder) | Out-Null
     $target = Join-Path $folder 'app-debug.apk'
     if (-not $ApkPath -and (Test-Path $target)) { return $target }
@@ -317,7 +317,7 @@ function Start-Vytal([string]$Root, [string]$Address, [string]$DatabasePath, [st
     Write-Host "Backend OK: http://${ip}:8000/health | API: http://${ip}:8000/api/v1 | Metro: http://${ip}:8081"
     Write-Host 'No Samsung, mesmo Wi-Fi privado (sem rede de convidados/VPN): abra /health no navegador. Isso testa o caminho celular -> PC; o teste no PC sozinho nao comprova esse caminho.'
     Write-Host 'Se falhar: confira IP, isolamento de clientes no roteador e permissoes do Firewall Windows para Python/Node SOMENTE em redes privadas/sub-rede local. Nenhuma regra foi criada. HTTP e Metro sao exclusivos de desenvolvimento confiavel.'
-    $url = 'vytal://expo-development-client/?url=' + [Uri]::EscapeDataString("http://${ip}:8081")
+    $url = 'vytal://expo-development-client/?url=' + [Uri]::EscapeDataString("http://${ip}:8081?disableOnboarding=1")
     Write-Host "Abra Vytal > Enter URL manually: http://${ip}:8081 (ou QR do terminal Metro). Nao use Expo Go. Link: $url"
     $adb = Find-VytalAdb $Root
     if ($adb) {

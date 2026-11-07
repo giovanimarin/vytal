@@ -140,7 +140,7 @@ def evidence(name):
         subprocess.run(['adb', 'exec-out', 'screencap', '-p'], stdout=file, check=True)
     if name != 'FAILURE':
         checks.append(name)
-        print('::notice::Android runtime PASS: ' + name, flush=True)
+        print('Android runtime PASS: ' + name, flush=True)
 
 
 def sources():
@@ -390,10 +390,12 @@ def run():
 
 try:
     run()
+    assert len(checks) == 15, 'The complete Android acceptance flow must finish all 15 milestones'
+    print('::notice::Android runtime passed all 15 milestones: ' + ', '.join(checks), flush=True)
 except BaseException as error:
     message = (type(error).__name__ + ': ' + str(error))[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
     print('::error::Android runtime smoke: ' + message, flush=True)
-    print('Completed runtime checks: ' + ', '.join(checks), flush=True)
+    print('::notice::Completed runtime checks: ' + ', '.join(checks), flush=True)
     print('::notice::Recent UI taps: ' + json.dumps(recent_taps), flush=True)
     logcat = OUT / 'logcat.txt'
     if logcat.exists():
