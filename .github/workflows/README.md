@@ -7,6 +7,12 @@
 - Lint backend (ruff)
 - TypeScript check mobile (tsc --noEmit)
 
+### `android-runtime.yml` — APK e runtime da issue #27
+
+Ubuntu 24.04, Node 22, Python 3.12 e JDK 17. Valida SDK/autolinking, faz prebuild e build debug limpos, inspeciona DEX/permissões/assinatura e publica `android-health-connect-debug-apk`. O smoke usa emulador Android 14 com KVM, Metro, backend SQLite local e um writer Health Connect sintético separado. A validação inclui cadastro/login, browser nativo, consentimento/leitura, importação, replay/deduplicação, erro de rede, isolamento A/B e reinstalação preservando sessão. Screenshots, XML, logcat e resultados ficam em `android-runtime-evidence`.
+
+Instruções e limites de homologação física: [issue #27](../../docs/android/ISSUE-27.md).
+
 ### `deploy.yml` — roda ao mergear
 | Branch    | Ambiente    | Cloud Run Service              |
 |-----------|-------------|-------------------------------|

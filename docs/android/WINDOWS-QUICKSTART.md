@@ -11,7 +11,7 @@ Na raiz do projeto:
 
 Se o PowerShell bloquear scripts, use ` .\vytal.bat install` / ` .\vytal.bat start`. O wrapper libera somente aquele processo; não exige administrador nem altera políticas permanentes.
 
-**Install:** prepara dependências e reutiliza o [APK debug do CI](https://github.com/giovanimarin/vytal/actions/runs/42129619190), artefato **android-health-connect-debug-apk**. Com `gh` autorizado, baixa automaticamente; sem ele, abre o GitHub (pode exigir login) e uma janela para selecionar o ZIP/APK baixado. Alternativa: `install -ApkPath C:\Downloads\artefato.zip`. Se expirou, mantenedor deve regenerar no CI; não usar APK desconhecido.
+**Install:** prepara dependências e reutiliza o [APK debug do CI](https://github.com/giovanimarin/vytal/actions/runs/42396895440), artefato **android-health-connect-debug-apk**. Com `gh` autorizado, baixa automaticamente; sem ele, abre o GitHub (pode exigir login) e uma janela para selecionar o ZIP/APK baixado. Alternativa: `install -ApkPath C:\Downloads\artefato.zip`. Se expirou, mantenedor deve regenerar no CI; não usar APK desconhecido.
 
 Com ADB/USB autorizado, instala preservando dados. Sem ADB, copie o APK indicado ao Samsung por USB/Transferência de arquivos, abra em **Meus Arquivos** e autorize essa origem se confiar nela. Não desinstale um app existente para contornar erro de assinatura. [ADB standalone](https://developer.android.com/tools/releases/platform-tools) é opcional, sem SDK completo; extraia em `.local-vytal/platform-tools`. Para USB, ative depuração e aceite RSA. Políticas Samsung podem impedir instalação; o script não as modifica.
 

@@ -1,0 +1,124 @@
+name: Android APK runtime smoke
+
+on:
+  pull_request:
+    branches: [codex/windows-android-launcher]
+  push:
+    branches: [codex/issue-27-android-runtime]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Retain APK/evidence for each commit while a follow-up correction is tested.
+  group: android-runtime-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  apk-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      NODE_ENV: development
+      EXPO_PUBLIC_API_URL: http://10.0.2.2:8000/api/v1
+      EXPO_NO_TELEMETRY: '1'
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/vytal-app/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements-prod.txt
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pip install -r backend/requirements-prod.txt pytest
+      - name: Local launcher persistence regression
+        run: pytest -q tests/test_android_local.py
+      - name: Clean SDK 54 native build, autolinking and compiled APK assertions
+        run: |
+          set -o pipefail
+          mkdir -p android-smoke-results
+          if ! bash scripts/android/build.sh 2>&1 | tee android-smoke-results/native-build.log; then
+            python - <<'PYCODE'
+          from pathlib import Path
+          lines = Path('android-smoke-results/native-build.log').read_text(errors='replace').splitlines()
+          message = '\n'.join(lines[-65:])[-6000:]
+          print('::error::Native build: ' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYCODE
+            exit 1
+          fi
+      - name: Upload updated installable development APK
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-health-connect-debug-apk
+          path: mobile/vytal-app/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      - name: Expo doctor (including online schema and native compatibility)
+        working-directory: mobile/vytal-app
+        run: npx expo-doctor
+      - name: Release compiler memory before booting Android
+        run: |
+          mobile/vytal-app/android/gradlew -p mobile/vytal-app/android --stop
+          python - <<'PYCODE'
+          import os
+          import signal
+          import subprocess
+          for line in subprocess.check_output(['jps', '-l'], text=True).splitlines():
+              pid, _, name = line.partition(' ')
+              if name == 'org.jetbrains.kotlin.daemon.KotlinCompileDaemon':
+                  os.kill(int(pid), signal.SIGTERM)
+          PYCODE
+      - name: Enable KVM for the Android runtime test
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          # udev trigger is asynchronous; wait before inspecting permissions.
+          sudo udevadm settle
+          if [[ ! -c /dev/kvm ]]; then
+            sudo modprobe kvm || true
+            if grep -qw vmx /proc/cpuinfo; then sudo modprobe kvm_intel || true; fi
+            if grep -qw svm /proc/cpuinfo; then sudo modprobe kvm_amd || true; fi
+            sudo udevadm settle
+          fi
+          if [[ ! -c /dev/kvm ]]; then
+            echo '::error::The Ubuntu runner did not expose a KVM device for the required Android runtime test.'
+            exit 1
+          fi
+          sudo chmod a+rw /dev/kvm
+          ls -l /dev/kvm
+          if [[ ! -w /dev/kvm ]]; then
+            echo '::error::The Android test user cannot access the KVM device after udev setup.'
+            exit 1
+          fi
+      - name: APK + Metro + local SQLite + real Health Connect (synthetic data)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -accel on -noaudio -no-boot-anim -camera-back none -memory 2048 -cores 2
+          script: python scripts/android/smoke.py
+      - name: Upload runtime evidence (synthetic emulator, not Garmin homologation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-evidence
+          path: android-smoke-results/

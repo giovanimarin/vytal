@@ -67,6 +67,7 @@ export default function LoginScreen() {
               style={[styles.input, emailFocused && styles.inputFocused]}
               placeholder="seu@email.com"
               placeholderTextColor="#475569"
+              testID="login-email"
               value={email}
               onChangeText={setEmail}
               onFocus={() => setEmailFocused(true)}
@@ -85,6 +86,7 @@ export default function LoginScreen() {
               style={[styles.input, passwordFocused && styles.inputFocused]}
               placeholder="••••••••"
               placeholderTextColor="#475569"
+              testID="login-password"
               value={password}
               onChangeText={setPassword}
               onFocus={() => setPasswordFocused(true)}
@@ -103,6 +105,7 @@ export default function LoginScreen() {
           )}
 
           <TouchableOpacity
+            testID="login-submit"
             style={[styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}

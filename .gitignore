@@ -43,3 +43,6 @@ mobile/vytal-app/android/
 mobile/vytal-app/ios/
 web/.next-dev/
 web/.next-e2e/
+
+# Synthetic Android runtime evidence
+android-smoke-results/
