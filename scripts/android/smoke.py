@@ -22,15 +22,28 @@ FIXTURE = 'org.vytal.smokefixture'
 checks = []
 
 
-def adb(*args):
-    return subprocess.check_output(['adb', *args], text=True, stderr=subprocess.STDOUT, timeout=30)
+def adb(*args, timeout=30):
+    return subprocess.check_output(['adb', *args], text=True, stderr=subprocess.STDOUT, timeout=timeout)
 
 
 def tree():
-    adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/vytal-smoke.xml')
-    value = adb('shell', 'cat', '/sdcard/vytal-smoke.xml')
-    assert not re.search(r'Cannot find native module|Unable to resolve module|Render Error|Uncaught Error', value), value
-    return ET.fromstring(value)
+    last_error = None
+    # UiAutomator can briefly fail to obtain an idle hierarchy during transitions.
+    # Retry transport/parse failures; app red screens and ANRs still fail immediately.
+    for _ in range(3):
+        try:
+            dumped = adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/vytal-smoke.xml', timeout=15)
+            if 'ERROR:' in dumped:
+                raise RuntimeError(dumped)
+            value = adb('shell', 'cat', '/sdcard/vytal-smoke.xml', timeout=10)
+            root = ET.fromstring(value)
+        except (subprocess.SubprocessError, ET.ParseError, RuntimeError) as error:
+            last_error = error
+            time.sleep(1)
+            continue
+        assert not re.search(r"Cannot find native module|Unable to resolve module|Render Error|Uncaught Error|Vytal isn.t responding", value), value
+        return root
+    raise AssertionError(f'Android UI hierarchy unavailable after retries: {last_error}')
 
 
 def find(selector):
