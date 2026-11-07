@@ -48,7 +48,18 @@ jobs:
       - name: Local launcher persistence regression
         run: pytest -q tests/test_android_local.py
       - name: Clean SDK 54 native build, autolinking and compiled APK assertions
-        run: bash scripts/android/build.sh
+        run: |
+          set -o pipefail
+          mkdir -p android-smoke-results
+          if ! bash scripts/android/build.sh 2>&1 | tee android-smoke-results/native-build.log; then
+            python - <<'PYCODE'
+          from pathlib import Path
+          lines = Path('android-smoke-results/native-build.log').read_text(errors='replace').splitlines()
+          message = '\n'.join(lines[-65:])[-6000:]
+          print('::error::Native build: ' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYCODE
+            exit 1
+          fi
       - name: Expo doctor (including online schema and native compatibility)
         working-directory: mobile/vytal-app
         run: npx expo-doctor

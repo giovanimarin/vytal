@@ -2,17 +2,17 @@
 import ipaddress
 import json
 import os
-from pathlib import Path
 import secrets
 import socket
 import subprocess
 import sys
 import time
+from pathlib import Path
 from urllib.parse import quote
 
-from dotenv import dotenv_values
 import httpx
 import yaml
+from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,7 +37,7 @@ def prepare(root, supplied=None):
                 raise ValueError('Configuração de nuvem recusada; selecione SQLite local.')
             db = Path(config['local']['db_path'])
             databases.append(db if db.is_absolute() else backend / db)
-    existing = set(p.resolve() for p in databases if p.exists())
+    existing = {p.resolve() for p in databases if p.exists()}
     if supplied:
         db = Path(supplied).resolve()
     elif len(existing) > 1:

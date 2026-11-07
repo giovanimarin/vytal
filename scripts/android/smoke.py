@@ -3,14 +3,14 @@ No app-data clear, uninstall, mocked React Native modules or cloud backend.
 """
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
-from urllib.parse import quote
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 
@@ -27,7 +27,7 @@ def adb(*args):
 
 
 def tree():
-    adb('shell', 'uiautomator', 'dump', '/sdcard/vytal-smoke.xml')
+    adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/vytal-smoke.xml')
     value = adb('shell', 'cat', '/sdcard/vytal-smoke.xml')
     assert not re.search(r'Cannot find native module|Unable to resolve module|Render Error|Uncaught Error', value), value
     return ET.fromstring(value)
@@ -180,7 +180,7 @@ def run():
             enter('register-password', password)
             enter('register-confirmPassword', password)
             tap('register-submit', scroll=True)
-            wait('Pular por agora')
+            time.sleep(2)
             tap('Pular por agora', scroll=True)
             wait('dashboard-menu')
             evidence('02-registration-dashboard')
@@ -190,7 +190,16 @@ def run():
             # Eager WebBrowser import on the actual /connect route reproduces #27.
             link('connect')
             wait('Conectar com Google Fit')
-            evidence('04-google-fit-route-native-webbrowser')
+            tap('Conectar com Google Fit')
+            for _ in range(30):
+                activity = adb('shell', 'dumpsys', 'activity', 'activities')
+                if re.search(r'(mResumedActivity|topResumedActivity).*com\.android\.chrome', activity):
+                    break
+                time.sleep(1)
+            else:
+                raise AssertionError('Native WebBrowser did not open Chrome from Google Fit route')
+            evidence('04-google-fit-native-webbrowser-opens-chrome')
+            adb('shell', 'input', 'keyevent', '4')
             link('')
             sources()
             evidence('05-data-sources-health-connect')
@@ -204,7 +213,7 @@ def run():
                      'HEART_RATE', 'RESTING_HEART_RATE', 'SLEEP', 'WEIGHT', 'SPEED', 'ELEVATION_GAINED']
             for kind in reads:
                 adb('shell', 'pm', 'grant', APP, 'android.permission.health.READ_' + kind)
-            tap('hc-sync', scroll=True)
+            tap('hc-connect', scroll=True)
             wait('Sem registros para o filtro')
             evidence('07-real-native-empty-read')
             adb('shell', 'pm', 'grant', FIXTURE, 'android.permission.health.WRITE_STEPS')
@@ -272,11 +281,13 @@ def run():
 
 try:
     run()
-except BaseException:
+except BaseException as error:
+    message = (type(error).__name__ + ': ' + str(error))[-3000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print('::error::Android runtime smoke: ' + message, flush=True)
     try:
         evidence('FAILURE')
-    except Exception:
-        pass
+    except (subprocess.SubprocessError, AssertionError, ET.ParseError, OSError) as capture_error:
+        print('Could not capture failure UI:', type(capture_error).__name__, flush=True)
     raise
 finally:
     (OUT / 'checks.json').write_text(json.dumps({'checks_passed': checks,
