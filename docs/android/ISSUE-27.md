@@ -44,7 +44,7 @@ O smoke inicia o APK com Metro e FastAPI/SQLite local, acessado pelo Android em 
 - Erro de rede e reinício do backend preservando o mesmo SQLite.
 - Isolamento A/B, retorno à conta A e reinstalação `-r` preservando a sessão.
 
-O SQLite do smoke é temporário, com contas e chaves exclusivamente de teste. A execução publica screenshots, árvores de UI, logcat, logs de Metro/backend e `checks.json`, inclusive em caso de falha. O CI encerra os compiladores antes do emulador, exige KVM e limita CPU/RAM do AVD. Erros de UI transitórios recebem tentativas limitadas; red screens e ANRs do Vytal falham o teste.
+No AVD, a negação usa a UI nativa; a concessão para leitura é aplicada por `pm grant`, seguida de chamadas reais ao SDK Health Connect. O SQLite do smoke é temporário, com contas e chaves exclusivamente de teste. A execução publica screenshots, árvores de UI, logcat, logs de Metro/backend e `checks.json`, inclusive em caso de falha. O CI encerra os compiladores antes do emulador, exige KVM e limita CPU/RAM do AVD. Erros de UI transitórios recebem tentativas limitadas; red screens e ANRs do Vytal falham o teste.
 
 ## Evidências e limites
 

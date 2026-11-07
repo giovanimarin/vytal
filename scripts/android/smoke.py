@@ -54,17 +54,27 @@ def find(selector):
     return None
 
 
-def wait(selector, timeout=90):
+class ElementNotVisibleError(AssertionError):
+    pass
+
+
+def wait(selector, timeout=90, scroll=False):
     end = time.monotonic() + timeout
     while time.monotonic() < end:
-        node = find(selector)
-        if node is not None:
-            return node
+        if scroll:
+            try:
+                return reveal(selector, scroll=True)
+            except ElementNotVisibleError:
+                pass
+        else:
+            node = find(selector)
+            if node is not None:
+                return node
         time.sleep(1)
     raise AssertionError(f'UI did not show {selector}')
 
 
-def tap(selector, scroll=False):
+def reveal(selector, scroll=False):
     directions = [None] + ['down'] * 4 + ['up'] * 8 if scroll else [None]
     for direction in directions:
         if direction:
@@ -79,9 +89,14 @@ def tap(selector, scroll=False):
         if node is not None:
             x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
             if x2 > x1 and y2 > y1:
-                adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
-                return
-    raise AssertionError(f'UI element not tappable: {selector}')
+                return node
+    raise ElementNotVisibleError(f'UI element not visible: {selector}')
+
+
+def tap(selector, scroll=False):
+    node = reveal(selector, scroll)
+    x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
+    adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
 
 def hide_keyboard():
@@ -253,14 +268,16 @@ def run():
             # Real Android permission sheet: deny via Back, then verify app state.
             time.sleep(2)
             adb('shell', 'input', 'keyevent', '4')
-            wait('Permissão negada')
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('Permissão negada', timeout=120, scroll=True)
             evidence('06-real-native-permission-denied')
             reads = ['EXERCISE', 'STEPS', 'DISTANCE', 'ACTIVE_CALORIES_BURNED', 'TOTAL_CALORIES_BURNED',
                      'HEART_RATE', 'RESTING_HEART_RATE', 'SLEEP', 'WEIGHT', 'SPEED', 'ELEVATION_GAINED']
             for kind in reads:
                 adb('shell', 'pm', 'grant', APP, 'android.permission.health.READ_' + kind)
             tap('hc-connect', scroll=True)
-            wait('Sem registros para o filtro')
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('Sem registros para o filtro', timeout=120, scroll=True)
             evidence('07-real-native-empty-read')
             adb('shell', 'pm', 'grant', FIXTURE, 'android.permission.health.WRITE_STEPS')
             adb('shell', 'am', 'start', '-W', '-n', FIXTURE + '/.MainActivity')
@@ -270,24 +287,28 @@ def run():
             wait('hc-origin')
             tap('hc-origin', scroll=True)
             tap('hc-rescan', scroll=True)
-            wait('1 registros importados')
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('1 registros importados', timeout=120, scroll=True)
             evidence('09-real-native-hc-import-synthetic-origin')
             token = client.post('/auth/login', json={'email': email_a, 'password': password}).raise_for_status().json()['access_token']
             headers = {'Authorization': 'Bearer ' + token}
             data = client.get('/health-connect/records', headers=headers).raise_for_status().json()
             assert data['retained_raw'] == 1 and data['records'][0]['origin'] == FIXTURE, data
             tap('hc-rescan', scroll=True)
-            wait('1 registros importados')
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('1 registros importados', timeout=120, scroll=True)
             assert client.get('/health-connect/records', headers=headers).json()['retained_raw'] == 1
             evidence('10-replay-deduplicated')
             backend.terminate()
             backend.wait(timeout=10)
             tap('hc-sync', scroll=True)
-            wait('Falha na importação', timeout=120)
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('Falha na importação', timeout=120, scroll=True)
             evidence('11-network-error-preserves-session')
             backend = start_backend()  # same SQLite, same keys
             tap('hc-sync', scroll=True)
-            wait('1 registros importados')
+            wait('hc-sync', timeout=120, scroll=True)
+            wait('1 registros importados', timeout=120, scroll=True)
             evidence('12-backend-restart-preserves-sqlite')
             signout()
             client.post('/auth/register', json={'name': 'Synthetic B', 'email': email_b, 'password': password}).raise_for_status()
@@ -302,7 +323,7 @@ def run():
             signin(email_a, password)
             sources()
             tap('hc-origin', scroll=True)
-            wait('importado / Health Connect')
+            reveal('importado / Health Connect', scroll=True)
             evidence('14-account-a-records-retained')
             # Install over the APK without clearing SecureStore, then prove authenticated UI.
             adb('shell', 'am', 'force-stop', APP)
